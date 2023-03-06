@@ -1,68 +1,45 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react'
-import { GiftedChat,Bubble } from 'react-native-gifted-chat'
+import React, { useState, useEffect, useCallback } from 'react'
+import { GiftedChat, Bubble } from 'react-native-gifted-chat'
 import { auth, database } from '../config/firebase';
-import { collection, addDoc, orderBy, query, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { colors } from '../config/constants';
 
-
-function Chat() {
+function Chat({ route }) {
     const [messages, setMessages] = useState([]);
 
-    useLayoutEffect(() => {
-
-        const collectionRef = collection(database, 'chats');
-        const q = query(collectionRef, orderBy('createdAt', 'desc'));
-
-        const unsubscribe = onSnapshot(q, querySnapshot => {
-            console.log('querySnapshot unsubscribe');
-            setMessages(
-                querySnapshot.docs.map(doc => ({
-                    _id: doc.data()._id,
-                    createdAt: doc.data().createdAt.toDate(),
-                    text: doc.data().text,
-                    user: doc.data().user
-                }))
+    useEffect(() => {
+        onSnapshot(doc(database, 'chats', route.params.id), (doc) => {
+            setMessages(doc.data().messages.map((message) => ({
+                _id: message._id,
+                createdAt: message.createdAt.toDate(),
+                text: message.text,
+                user: message.user
+            }))
             );
         });
-        return unsubscribe;
-    }, []);
+    }, [route.params.id]);
 
-    const onSend = useCallback((messages = []) => {
-        setMessages(previousMessages =>
-            GiftedChat.append(previousMessages, messages)
-        );
-        // setMessages([...messages, ...messages]);
-        const { _id, createdAt, text, user } = messages[0];
-        addDoc(collection(database, 'chats'), {
-            _id,
-            createdAt,
-            text,
-            user
-        });
-    }, []);
+    const onSend = useCallback((m = []) => {
+        setDoc(doc(database, 'chats', route.params.id), { messages: GiftedChat.append(messages, m) }, { merge: true });
+    }, [route.params.id, messages]);
 
-    function renderBubble (props) {
+    function renderBubble(props) {
         return (
-          <Bubble
-            {...props}
-            wrapperStyle={{
-              right: {
-                backgroundColor: colors.primary
-              },
-              left: {
-                backgroundColor: 'lightgrey'
-              }
-            }}
-          />
+            <Bubble
+                {...props}
+                wrapperStyle={{
+                    right: {
+                        backgroundColor: colors.primary
+                    },
+                    left: {
+                        backgroundColor: 'lightgrey'
+                    }
+                }}
+            />
         )
-      }
+    }
 
     return (
-        // <>
-        //   {messages.map(message => (
-        //     <Text key={message._id}>{message.text}</Text>
-        //   ))}
-        // </>
         <GiftedChat
             messages={messages}
             showAvatarForEveryMessage={false}

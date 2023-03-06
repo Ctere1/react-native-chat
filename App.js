@@ -13,6 +13,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './config/firebase';
 import Profile from "./screens/Profile";
 import Login from "./screens/Login";
+import Users from "./screens/Users";
 
 const Stack = createStackNavigator();
 
@@ -22,6 +23,7 @@ const ChatsScreen = () => (
   <Stack.Navigator >
     <Stack.Screen name="Chats" component={Chats} />
     <Stack.Screen name="Chat" component={Chat} />
+    <Stack.Screen name="Users" component={Users} options={{ title: 'Select User' }} />
   </Stack.Navigator>
 )
 
