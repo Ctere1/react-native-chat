@@ -1,20 +1,31 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, Button, TextInput, Image, SafeAreaView, TouchableOpacity, StatusBar, Alert } from "react-native";
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, database } from '../config/firebase';
 import { colors } from '../config/constants';
+import { doc, setDoc } from 'firebase/firestore';
 const backImage = require("../assets/background.png");
 
 export default function SignUp({ navigation }) {
 
     const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
     const onHandleSignup = () => {
         if (email !== '' && password !== '') {
             createUserWithEmailAndPassword(auth, email, password)
-                .then(() => console.log('Signup success'))
-                .catch((err) => Alert.alert("Login error", err.message));
+                .then((cred) => {
+                    updateProfile(cred.user, { displayName: username }).then(() => {
+                        setDoc(doc(database, 'users', cred.user.email), {
+                            id: cred.user.uid,
+                            email: cred.user.email,
+                            name: cred.user.displayName
+                        })
+                    })
+                    console.log('Signup success: ' + cred.user.email)
+                })
+                .catch((err) => Alert.alert("Signup error", err.message));
         }
     };
 
@@ -24,6 +35,16 @@ export default function SignUp({ navigation }) {
             <View style={styles.whiteSheet} />
             <SafeAreaView style={styles.form}>
                 <Text style={styles.title}>Sign Up</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Enter name"
+                    autoCapitalize="none"
+                    keyboardType="name-phone-pad"
+                    textContentType="name"
+                    autoFocus={true}
+                    value={username}
+                    onChangeText={(text) => setUsername(text)}
+                />
                 <TextInput
                     style={styles.input}
                     placeholder="Enter email"
@@ -68,7 +89,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'black',
         alignSelf: "center",
-        paddingBottom: 24,
+        paddingTop: 48,
     },
     input: {
         backgroundColor: "#F6F7FB",

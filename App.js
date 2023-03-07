@@ -16,26 +16,20 @@ import Login from "./screens/Login";
 import Users from "./screens/Users";
 
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator()
+const AuthenticatedUserContext = createContext({});
 
-const TabsStack = createBottomTabNavigator()
+const AuthenticatedUserProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  return (
+    <AuthenticatedUserContext.Provider value={{ user, setUser }}>
+      {children}
+    </AuthenticatedUserContext.Provider>
+  );
+};
 
-const ChatsScreen = () => (
-  <Stack.Navigator >
-    <Stack.Screen name="Chats" component={Chats} />
-    <Stack.Screen name="Chat" component={Chat} />
-    <Stack.Screen name="Users" component={Users} options={{ title: 'Select User' }} />
-  </Stack.Navigator>
-)
-
-const SettingsScreen = () => (
-  <Stack.Navigator>
-    <Stack.Screen name="Settings" component={Settings} />
-    <Stack.Screen name="Profile" component={Profile} />
-  </Stack.Navigator>
-)
-
-const TabsScreen = () => (
-  <TabsStack.Navigator screenOptions={({ route }) => ({
+const TabNavigator = () => (
+  <Tab.Navigator screenOptions={({ route }) => ({
     tabBarIcon: ({ focused, color, size }) => {
       let iconName;
 
@@ -51,24 +45,22 @@ const TabsScreen = () => (
     },
     tabBarActiveTintColor: colors.primary,
     tabBarInactiveTintColor: 'gray',
-    headerShown: false,
-    presentation: 'card'
+    headerShown: true,
+    presentation: 'modal'
   })}>
-    <TabsStack.Screen name="Chats" component={ChatsScreen} />
-    <TabsStack.Screen name="Settings" component={SettingsScreen} />
-  </TabsStack.Navigator>
+    <Tab.Screen name="Chats" component={Chats} options={{ tabBarBadge: 2 }} />
+    <Tab.Screen name="Settings" component={Settings} />
+  </Tab.Navigator >
 )
 
-const AuthenticatedUserContext = createContext({});
-
-const AuthenticatedUserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  return (
-    <AuthenticatedUserContext.Provider value={{ user, setUser }}>
-      {children}
-    </AuthenticatedUserContext.Provider>
-  );
-};
+const MainStack = () => (
+  <Stack.Navigator>
+    <Stack.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
+    <Stack.Screen name="Chat" component={Chat} />
+    <Stack.Screen name="Users" component={Users} options={{ title: 'Select User' }} />
+    <Stack.Screen name="Profile" component={Profile} />
+  </Stack.Navigator>
+)
 
 function AuthStack() {
   return (
@@ -104,7 +96,7 @@ function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {user ? <TabsScreen /> : <AuthStack />}
+      {user ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

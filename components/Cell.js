@@ -3,16 +3,24 @@ import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "../config/constants";
 import { Ionicons } from '@expo/vector-icons'
 
-const Cell = ({ title, icon, tintColor, style, onPress }) => {
+const Cell = ({ title, icon, tintColor, style, onPress, secondIcon, subtitle }) => {
     return (
         <TouchableOpacity style={[styles.cell, style]} onPress={onPress}>
             <View style={[styles.iconContainer, { backgroundColor: tintColor }]}>
                 <Ionicons name={icon} size={24} marginStart={4} color={'white'} />
             </View>
-            <Text style={styles.title}>
-                {title}
-            </Text>
-            <Ionicons name='chevron-forward-outline' size={20} />
+
+            <View style={styles.textsContainer}>
+                <Text style={styles.title}>
+                    {title}
+                </Text>
+                {subtitle && (
+                    <Text style={styles.subtitle}>
+                        {subtitle}
+                    </Text>
+                )}
+            </View>
+            <Ionicons name={secondIcon ?? 'chevron-forward-outline'} size={20} />
         </TouchableOpacity >
     )
 }
@@ -33,10 +41,15 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderColor: colors.border,
     },
+    subtitle: {
+        color: '#565656'
+    },
     title: {
         fontSize: 16,
-        marginStart: 16,
-        flex: 1
+    },
+    textsContainer: {
+        flex: 1,
+        marginStart: 8
     },
     iconContainer: {
         width: 32,

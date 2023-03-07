@@ -15,8 +15,8 @@ const Settings = ({ navigation }) => {
     return (
         <View>
             <ContactRow
-                name='cemil'
-                subtitle='cemiltan@gmail.com'
+                name={auth?.currentUser?.displayName ?? 'No name'}
+                subtitle={auth?.currentUser?.email}
                 style={styles.contactRow}
                 onPress={() => {
                     navigation.navigate('Profile');
