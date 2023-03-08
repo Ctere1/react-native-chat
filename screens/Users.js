@@ -33,14 +33,14 @@ const Users = () => {
         <SafeAreaView style={styles.container}>
             <Cell
                 title='New group'
-                icon='people-outline'
+                icon='people'
                 tintColor={colors.teal}
                 onPress={handleNewGroup}
                 style={{ marginTop: 5, marginBottom: 5 }}
             />
             <Cell
                 title='New user'
-                icon='person-add-outline'
+                icon='person-add'
                 tintColor={colors.teal}
                 onPress={handleNewUser}
                 style={{ marginBottom: 10 }}
@@ -66,6 +66,7 @@ const Users = () => {
                                 subtitle={'User Status'}
                                 onPress={() => {
                                     addDoc(collection(database, 'chats'), {
+                                        lastUpdated: Date.now(),
                                         users: [
                                             { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName },
                                             { email: user.data().email, name: user.data().name }

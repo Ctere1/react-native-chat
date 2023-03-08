@@ -3,12 +3,12 @@ import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
 import { Ionicons } from '@expo/vector-icons'
 import { colors } from "../config/constants";
 
-const ContactRow = ({ name, subtitle, onPress, style }) => {
+const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected }) => {
     return (
-        <TouchableOpacity style={[styles.row, style]} onPress={onPress}>
+        <TouchableOpacity style={[styles.row, style]} onPress={onPress} onLongPress={onLongPress}>
             <View style={styles.avatar}>
                 <Text style={styles.avatarLabel}>
-                    {name.split(' ').reduce((prev, current) => `${prev}${current[0]}`, '')}
+                    {name.trim().split(' ').reduce((prev, current) => `${prev}${current[0]}`, '')}
                 </Text>
             </View>
 
@@ -21,6 +21,11 @@ const ContactRow = ({ name, subtitle, onPress, style }) => {
                 </Text>
             </View>
 
+            {selected &&
+                <View style={styles.overlay}>
+                    <Ionicons name="checkmark-outline" size={16} color={'white'} />
+                </View>
+            }
             <Ionicons name="chevron-forward-outline" size={20} />
         </TouchableOpacity>
     )
@@ -55,7 +60,19 @@ const styles = StyleSheet.create({
     avatarLabel: {
         fontSize: 20,
         color: 'white'
-    }
+    },
+    overlay: {
+        width: 22,
+        height: 22,
+        backgroundColor: colors.teal,
+        borderRadius: 11,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderColor: 'black',
+        borderWidth: 1.5,
+        top: 18,
+        right: 278
+    },
 })
 
 export default ContactRow;

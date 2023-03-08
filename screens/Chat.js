@@ -12,19 +12,21 @@ function Chat({ route }) {
     const [modal, setModal] = useState(false);
 
     useEffect(() => {
-        onSnapshot(doc(database, 'chats', route.params.id), (doc) => {
+        const unsubscribe = onSnapshot(doc(database, 'chats', route.params.id), (doc) => {
             setMessages(doc.data().messages.map((message) => ({
                 _id: message._id,
                 createdAt: message.createdAt.toDate(),
                 text: message.text,
-                user: message.user
+                user: message.user,
+                sent: true,
             }))
             );
         });
+        return unsubscribe;
     }, [route.params.id]);
 
     const onSend = useCallback((m = []) => {
-        setDoc(doc(database, 'chats', route.params.id), { messages: GiftedChat.append(messages, m) }, { merge: true });
+        setDoc(doc(database, 'chats', route.params.id), { messages: GiftedChat.append(messages, m), lastUpdated: Date.now() }, { merge: true });
     }, [route.params.id, messages]);
 
     function renderBubble(props) {
@@ -73,10 +75,6 @@ function Chat({ route }) {
         }
     }
 
-    // function setEmojiMessage(emoji) {
-    //     setMessages()
-    // }
-
     return (
         <>
             <GiftedChat
@@ -101,6 +99,12 @@ function Chat({ route }) {
                 renderUsernameOnMessage={true}
                 renderAvatarOnTop={true}
                 renderInputToolbar={renderInputToolbar}
+                minInputToolbarHeight={48}
+                scrollToBottom={true}
+            // onPressActionButton={handleEmojiPanel}
+            // onInputTextChanged={handleTyping}
+            // isTyping={handleTyping}
+            // shouldUpdateMessage={() => { return false; }}
             />
 
             <TouchableOpacity style={styles.emojiIcon} onPress={handleEmojiPanel}>
@@ -118,8 +122,8 @@ function Chat({ route }) {
                     modalStyle={styles.emojiModal}
                     containerStyle={styles.emojiContainerModal}
                     backgroundStyle={styles.emojiBackgroundModal}
-                    columns={4}
-                    emojiSize={72}
+                    columns={5}
+                    emojiSize={66}
                     activeShortcutColor={colors.primary}
                     onEmojiSelected={(emoji) => {
                         // console.log(emoji)
@@ -163,9 +167,6 @@ const styles = StyleSheet.create({
     emojiContainerModal: {
         height: 348,
         width: 396,
-        borderRadius: 10,
-        borderColor: colors.grey,
-        borderWidth: 5
     },
     emojiBackgroundModal: {
 
