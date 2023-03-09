@@ -53,12 +53,20 @@ const Chats = () => {
     const handleChatName = (chat) => {
         if (auth?.currentUser?.displayName) {
             if (auth?.currentUser?.displayName === chat.data().users[0].name) {
+                 //For 'message yourself'
+                if (auth?.currentUser?.displayName === chat.data().users[0].name && auth?.currentUser?.displayName === chat.data().users[1].name) {
+                    return auth?.currentUser?.displayName + '*(You)';
+                }
                 return chat.data().users[1].name;
             } else if (auth?.currentUser?.displayName === chat.data().users[1].name) {
                 return chat.data().users[0].name;
             }
         } else if (auth?.currentUser?.email) {
             if (auth?.currentUser?.email === chat.data().users[0].email) {
+                //For 'message yourself'
+                if (auth?.currentUser?.email === chat.data().users[0].email && auth?.currentUser?.email === chat.data().users[1].email) {
+                    return auth?.currentUser?.email + '*(You)';
+                }
                 return chat.data().users[1].email;
             } else if (auth?.currentUser?.email === chat.data().users[1].email) {
                 return chat.data().users[0].email;
