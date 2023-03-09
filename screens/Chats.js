@@ -4,7 +4,7 @@ import ContactRow from '../components/ContactRow';
 import Separator from "../components/Separator";
 import { useNavigation } from '@react-navigation/native';
 import { auth, database } from '../config/firebase';
-import { collection, doc, where, query, onSnapshot, orderBy, deleteDoc } from 'firebase/firestore';
+import { collection, doc, where, query, onSnapshot, orderBy, setDoc, deleteDoc } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons'
 import { colors } from "../config/constants";
 
@@ -16,7 +16,7 @@ const Chats = () => {
     useEffect(() => {
         const collectionRef = collection(database, 'chats');
         const q = query(collectionRef,
-            where('users', "array-contains", { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName }),
+            where('users', "array-contains", { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false }),
             orderBy("lastUpdated", "desc")
         );
         onSnapshot(q, (doc) => {
@@ -110,8 +110,36 @@ const Chats = () => {
                 {
                     text: "Delete chat",
                     onPress: () => {
+                        //Find the willUpdatedUsers
                         selectedItems.map((chatId) => {
-                            deleteDoc(doc(database, 'chats', chatId));
+                            let willUpdatedUsers = [];
+                            chats.map(chat => {
+                                if (chatId == chat.id) {
+
+                                    willUpdatedChat = chat;
+                                    chat.data().users.map(user => {
+                                        if (user.email == auth?.currentUser?.email) {
+                                            willUpdatedUsers.push({ email: user.email, name: user.name, deletedFromChat: true })
+                                        } else {
+                                            willUpdatedUsers.push({ email: user.email, name: user.name, deletedFromChat: user.deletedFromChat })
+                                        }
+                                    })
+                                }
+                            })
+                            //Remove the current user from chat
+                            setDoc(doc(database, 'chats', chatId), {
+                                users: willUpdatedUsers
+                            }, { merge: true });
+                            //if nobody left in chat, delete the entire chat
+                            let deletedFromChatUsers = 0;
+                            willUpdatedUsers.forEach(user => {
+                                if (user.deletedFromChat) {
+                                    deletedFromChatUsers++;
+                                }
+                            })
+                            if (willUpdatedUsers.length == deletedFromChatUsers) {
+                                deleteDoc(doc(database, 'chats', chatId))
+                            }
                         });
                         deSelectItems();
                     },

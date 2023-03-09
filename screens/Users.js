@@ -68,8 +68,8 @@ const Users = () => {
                                     addDoc(collection(database, 'chats'), {
                                         lastUpdated: Date.now(),
                                         users: [
-                                            { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName },
-                                            { email: user.data().email, name: user.data().name }
+                                            { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false },
+                                            { email: user.data().email, name: user.data().name, deletedFromChat: false }
                                         ],
                                         messages: []
                                     }).then((doc) => {
