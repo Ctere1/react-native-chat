@@ -55,6 +55,7 @@ const Users = () => {
         if (navigationChatID != '') {
             navigation.navigate('Chat', { id: navigationChatID });
         } else {
+            //Creates new chat
             const newRef = doc(collection(database, "chats"));
             await setDoc(newRef, {
                 lastUpdated: Date.now(),

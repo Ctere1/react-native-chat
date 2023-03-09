@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, Alert } from "react-native";
 import ContactRow from "../components/ContactRow";
 import { colors } from "../config/constants";
 import Separator from "../components/Separator";
@@ -27,7 +27,19 @@ const Settings = ({ navigation }) => {
                 title='Logout'
                 icon='log-out-outline'
                 tintColor={colors.red}
-                onPress={onSignOut}
+                onPress={() => {
+                    Alert.alert('Logout?', 'You have to login again',
+                        [
+                            {
+                                text: "Logout",
+                                onPress: () => { onSignOut },
+                            },
+                            {
+                                text: "Cancel",
+                            },
+                        ],
+                        { cancelable: true })
+                }}
                 style={{ marginTop: 20 }}
             />
 
@@ -37,6 +49,22 @@ const Settings = ({ navigation }) => {
                 tintColor={colors.pink}
                 onPress={() => {
                     alert('Share touched')
+                }}
+            />
+
+            <Cell
+                title='App info'
+                icon='information-circle-outline'
+                tintColor={colors.teal}
+                onPress={() => {
+                    Alert.alert('React Native Chat App', 'Developed by Cemil Tan',
+                        [
+                            {
+                                text: "Ok",
+                                onPress: () => { },
+                            },
+                        ],
+                        { cancelable: true })
                 }}
             />
 

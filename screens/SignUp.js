@@ -20,7 +20,8 @@ export default function SignUp({ navigation }) {
                         setDoc(doc(database, 'users', cred.user.email), {
                             id: cred.user.uid,
                             email: cred.user.email,
-                            name: cred.user.displayName
+                            name: cred.user.displayName,
+                            about: 'Available'
                         })
                     })
                     console.log('Signup success: ' + cred.user.email)

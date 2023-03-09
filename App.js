@@ -14,6 +14,7 @@ import { auth } from './config/firebase';
 import Profile from "./screens/Profile";
 import Login from "./screens/Login";
 import Users from "./screens/Users";
+import About from "./screens/About";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator()
@@ -59,6 +60,7 @@ const MainStack = () => (
     <Stack.Screen name="Chat" component={Chat} />
     <Stack.Screen name="Users" component={Users} options={{ title: 'Select User' }} />
     <Stack.Screen name="Profile" component={Profile} />
+    <Stack.Screen name="About" component={About} />
   </Stack.Navigator>
 )
 

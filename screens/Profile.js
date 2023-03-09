@@ -4,8 +4,19 @@ import { Ionicons } from '@expo/vector-icons'
 import { colors } from "../config/constants";
 import { auth } from '../config/firebase';
 import Cell from "../components/Cell";
+import { useNavigation } from "@react-navigation/native";
 
 const Profile = () => {
+    const navigation = useNavigation();
+
+    const changeName = () => {
+        alert('Change Name');
+    };
+
+    const displayEmail = () => {
+        alert('Display Email');
+    };
+
     const changePP = () => {
         alert('Change PP');
     };
@@ -40,7 +51,9 @@ const Profile = () => {
                 subtitle={auth?.currentUser?.displayName}
                 tintColor={colors.grey}
                 secondIcon='pencil-outline'
-                style={{ top: -36, marginBottom: 5 }} />
+                style={{ marginBottom: 5 }}
+                onPress={() => changeName()}
+            />
 
             <Cell
                 title='Email'
@@ -48,7 +61,19 @@ const Profile = () => {
                 icon='mail-outline'
                 tintColor={colors.grey}
                 secondIcon='pencil-outline'
-                style={{ marginTop: -36, marginBottom: 5 }} />
+                style={{ marginBottom: 5 }}
+                onPress={() => displayEmail()}
+            />
+
+            <Cell
+                title='About'
+                subtitle={'Available'}
+                icon='information-outline'
+                tintColor={colors.grey}
+                secondIcon='pencil-outline'
+                style={{ marginBottom: 5 }}
+                onPress={() => navigation.navigate('About')}
+            />
 
         </SafeAreaView>
     )
@@ -84,6 +109,7 @@ const styles = StyleSheet.create({
         bottom: 56,
         paddingHorizontal: 14,
         paddingVertical: 14,
+        marginBottom: -36,
     },
 })
 export default Profile;
