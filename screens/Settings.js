@@ -32,7 +32,7 @@ const Settings = ({ navigation }) => {
                         [
                             {
                                 text: "Logout",
-                                onPress: () => { onSignOut },
+                                onPress: () => { onSignOut() },
                             },
                             {
                                 text: "Cancel",

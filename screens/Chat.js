@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, StyleSheet, TouchableOpacity, Keyboard } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Keyboard, Text } from "react-native";
 import { Ionicons } from '@expo/vector-icons'
 import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat'
 import { auth, database } from '../config/firebase';
@@ -48,7 +48,7 @@ function Chat({ route }) {
     function renderSend(props) {
         return (
             <Send {...props} >
-                <View style={{ justifyContent: 'center', height: '100%', marginRight: 10, marginBottom: 20 }}>
+                <View style={{ justifyContent: 'center', height: '100%', marginRight: 4 }}>
                     <Ionicons
                         name='send'
                         size={24}
@@ -61,8 +61,21 @@ function Chat({ route }) {
 
     function renderInputToolbar(props) {
         return (
-            <InputToolbar {...props} containerStyle={styles.inputToolbar} >
+            <InputToolbar {...props} containerStyle={styles.inputToolbar} renderActions={renderActions} >
             </InputToolbar >
+        )
+    }
+
+    function renderActions() {
+        return (
+            <TouchableOpacity style={styles.emojiIcon} onPress={handleEmojiPanel}>
+                <View >
+                    <Ionicons
+                        name='happy-outline'
+                        size={32}
+                        color={colors.teal} />
+                </View>
+            </TouchableOpacity>
         )
     }
 
@@ -101,20 +114,12 @@ function Chat({ route }) {
                 renderInputToolbar={renderInputToolbar}
                 minInputToolbarHeight={48}
                 scrollToBottom={true}
-            // onPressActionButton={handleEmojiPanel}
+                onPressActionButton={handleEmojiPanel}
+                scrollToBottomStyle={styles.scrollToBottomStyle}
             // onInputTextChanged={handleTyping}
             // isTyping={handleTyping}
             // shouldUpdateMessage={() => { return false; }}
             />
-
-            <TouchableOpacity style={styles.emojiIcon} onPress={handleEmojiPanel}>
-                <View >
-                    <Ionicons
-                        name='happy-outline'
-                        size={32}
-                        color={colors.teal} />
-                </View>
-            </TouchableOpacity>
 
             {modal &&
                 <EmojiModal
@@ -149,14 +154,14 @@ function Chat({ route }) {
 
 const styles = StyleSheet.create({
     inputToolbar: {
-        bottom: -10,
-        marginLeft: 64,
+        bottom: 2,
+        marginLeft: 8,
         marginRight: 8,
         borderRadius: 16,
     },
     emojiIcon: {
-        marginLeft: 16,
-        bottom: 32,
+        marginLeft: 4,
+        bottom: 8,
         width: 32,
         height: 32,
         borderRadius: 16,
@@ -170,6 +175,16 @@ const styles = StyleSheet.create({
     },
     emojiBackgroundModal: {
 
+    },
+    scrollToBottomStyle: {
+        borderColor: colors.grey,
+        borderWidth: 2,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        position: 'absolute',
+        bottom: 12,
+        right: 12
     }
 })
 
