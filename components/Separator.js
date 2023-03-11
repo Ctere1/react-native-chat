@@ -12,8 +12,6 @@ const styles = StyleSheet.create({
     separator: {
         height: StyleSheet.hairlineWidth,
         backgroundColor: colors.border,
-        marginStart: 88,
-        marginEnd: 0
     },
 })
 

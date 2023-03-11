@@ -1,15 +1,15 @@
-import React from "react";
-import { Text, View, StyleSheet, Alert } from "react-native";
+import React, { useCallback } from "react";
+import { Text, View, StyleSheet, Alert, Linking, TouchableOpacity } from "react-native";
 import ContactRow from "../components/ContactRow";
 import { colors } from "../config/constants";
-import Separator from "../components/Separator";
 import Cell from "../components/Cell";
-import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { Ionicons } from '@expo/vector-icons'
 
 const Settings = ({ navigation }) => {
-    const onSignOut = () => {
-        signOut(auth).catch(error => console.log('Error logging out: ', error));
+
+    async function openGithub(url) {
+        await Linking.openURL(url);
     };
 
     return (
@@ -22,51 +22,46 @@ const Settings = ({ navigation }) => {
                     navigation.navigate('Profile');
                 }}
             />
-            <Separator />
+
             <Cell
-                title='Logout'
-                icon='log-out-outline'
-                tintColor={colors.red}
+                title='Account'
+                subtitle='Privacy, logout, delete account'
+                icon='key-outline'
                 onPress={() => {
-                    Alert.alert('Logout?', 'You have to login again',
-                        [
-                            {
-                                text: "Logout",
-                                onPress: () => { onSignOut() },
-                            },
-                            {
-                                text: "Cancel",
-                            },
-                        ],
-                        { cancelable: true })
+                    navigation.navigate('Account');
                 }}
+                iconColor="black"
                 style={{ marginTop: 20 }}
             />
 
             <Cell
-                title='Share App With a Friend'
-                icon='heart-outline'
-                tintColor={colors.pink}
+                title='Help'
+                subtitle='Contact us, app info'
+                icon='help-circle-outline'
+                iconColor="black"
                 onPress={() => {
-                    alert('Share touched')
+                    navigation.navigate('Help');
                 }}
             />
 
             <Cell
-                title='App info'
-                icon='information-circle-outline'
-                tintColor={colors.teal}
+                title='Invite a friend'
+                icon='people-outline'
+                iconColor="black"
                 onPress={() => {
-                    Alert.alert('React Native Chat App', 'Developed by Cemil Tan',
-                        [
-                            {
-                                text: "Ok",
-                                onPress: () => { },
-                            },
-                        ],
-                        { cancelable: true })
+                    alert('Share touched')
                 }}
+                showForwardIcon={false}
             />
+
+            <TouchableOpacity style={styles.githubLink} onPress={() => openGithub('https://github.com/Ctere1/react-native-chat')}>
+                <View >
+                    <Text style={{ fontSize: 12, fontWeight: 400 }}>
+                        <Ionicons name="logo-github" size={12} style={{ color: colors.teal }} />
+                        {' '}App's Github
+                    </Text>
+                </View>
+            </TouchableOpacity>
 
         </View>
     )
@@ -78,7 +73,15 @@ const styles = StyleSheet.create({
         marginTop: 16,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderColor: colors.border
-    }
+    },
+    githubLink: {
+        marginTop: 20,
+        alignSelf: "center",
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 20,
+        width: 100,
+    },
 })
 
 export default Settings;

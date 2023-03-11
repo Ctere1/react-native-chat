@@ -3,11 +3,11 @@ import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "../config/constants";
 import { Ionicons } from '@expo/vector-icons'
 
-const Cell = ({ title, icon, tintColor, style, onPress, secondIcon, subtitle }) => {
+const Cell = ({ title, icon, iconColor='white', tintColor, style, onPress, secondIcon, subtitle, showForwardIcon = true }) => {
     return (
         <TouchableOpacity style={[styles.cell, style]} onPress={onPress}>
             <View style={[styles.iconContainer, { backgroundColor: tintColor }]}>
-                <Ionicons name={icon} size={24} marginStart={4} color={'white'} />
+                <Ionicons name={icon} size={24} marginStart={4} color={iconColor} />
             </View>
 
             <View style={styles.textsContainer}>
@@ -20,7 +20,8 @@ const Cell = ({ title, icon, tintColor, style, onPress, secondIcon, subtitle }) 
                     </Text>
                 )}
             </View>
-            <Ionicons name={secondIcon ?? 'chevron-forward-outline'} size={20} />
+            {showForwardIcon && <Ionicons name={secondIcon ?? 'chevron-forward-outline'} size={20} />}
+
         </TouchableOpacity >
     )
 }

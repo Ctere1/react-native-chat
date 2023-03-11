@@ -37,7 +37,7 @@ const Users = () => {
     }, []);
 
     const handleNewGroup = () => {
-        alert('New group');
+        navigation.navigate('Group');
     }
 
     const handleNewUser = () => {
@@ -46,13 +46,46 @@ const Users = () => {
 
     const handleNavigate = async (user) => {
         let navigationChatID = '';
+        let messageYourselfChatID = '';
+
         existingChats.map(existingChat => {
-            if (existingChat.userEmails[1].email == user.data().email) {
-                navigationChatID = existingChat.chatId;
+            // console.log('--------------------------');
+            // console.log(existingChat, user.data().email);
+            let isCurrentUserInTheChat = false;
+            let isMessageYourselfExists = 0;
+            existingChat.userEmails.map((e) => {
+                if (e.email == auth?.currentUser?.email) {
+                    isCurrentUserInTheChat = true;
+                }
+
+                //Check is 'message yourself' chat exists
+                if (e.email == user.data().email) {
+                    isMessageYourselfExists++;
+                }
+            });
+
+            //This check is not look for 'message yourself' chat !.
+            //It only checks chats between different users.
+            existingChat.userEmails.map((e) => {
+                if (isCurrentUserInTheChat && e.email == user.data().email) {
+                    navigationChatID = existingChat.chatId;
+                }
+            });
+
+            //Need to seperate 'message yourself' chat id from other chats.
+            //It checks existing 'message yourself' chat.
+            if (isMessageYourselfExists == 2) {
+                messageYourselfChatID = existingChat.chatId;
+            }
+            //Creates new 'message yourself' chat.
+            if (auth?.currentUser?.email == user.data().email) {
+                navigationChatID = '';
             }
         });
 
-        if (navigationChatID != '') {
+        if (messageYourselfChatID != '') {
+            navigation.navigate('Chat', { id: messageYourselfChatID });
+        } else if (navigationChatID != '') {
             navigation.navigate('Chat', { id: navigationChatID });
         } else {
             //Creates new chat
@@ -99,7 +132,7 @@ const Users = () => {
                 icon='people'
                 tintColor={colors.teal}
                 onPress={handleNewGroup}
-                style={{ marginTop: 5, marginBottom: 5 }}
+                style={{ marginTop: 5 }}
             />
             <Cell
                 title='New user'
@@ -129,7 +162,6 @@ const Users = () => {
                                 subtitle={handleSubtitle(user)}
                                 onPress={() => handleNavigate(user)}
                             />
-                            <Separator />
                         </React.Fragment>
                     ))}
                 </ScrollView>

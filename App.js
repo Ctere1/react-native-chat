@@ -15,6 +15,9 @@ import Profile from "./screens/Profile";
 import Login from "./screens/Login";
 import Users from "./screens/Users";
 import About from "./screens/About";
+import Account from "./screens/Account";
+import Help from "./screens/Help";
+import Group from "./screens/Group";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator()
@@ -61,6 +64,9 @@ const MainStack = () => (
     <Stack.Screen name="Users" component={Users} options={{ title: 'Select User' }} />
     <Stack.Screen name="Profile" component={Profile} />
     <Stack.Screen name="About" component={About} />
+    <Stack.Screen name="Help" component={Help} />
+    <Stack.Screen name="Account" component={Account} />
+    <Stack.Screen name="Group" component={Group} options={{ title: 'New Group' }} />
   </Stack.Navigator>
 )
 

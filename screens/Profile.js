@@ -48,18 +48,18 @@ const Profile = () => {
             <Cell
                 title='Name'
                 icon='person-outline'
+                iconColor="black"
                 subtitle={auth?.currentUser?.displayName}
-                tintColor={colors.grey}
                 secondIcon='pencil-outline'
-                style={{ marginBottom: 5 }}
                 onPress={() => changeName()}
+                style={{ marginBottom: 5 }}
             />
 
             <Cell
                 title='Email'
                 subtitle={auth?.currentUser?.email}
                 icon='mail-outline'
-                tintColor={colors.grey}
+                iconColor="black"
                 secondIcon='pencil-outline'
                 style={{ marginBottom: 5 }}
                 onPress={() => displayEmail()}
@@ -69,7 +69,7 @@ const Profile = () => {
                 title='About'
                 subtitle={'Available'}
                 icon='information-outline'
-                tintColor={colors.grey}
+                iconColor="black"
                 secondIcon='pencil-outline'
                 style={{ marginBottom: 5 }}
                 onPress={() => navigation.navigate('About')}

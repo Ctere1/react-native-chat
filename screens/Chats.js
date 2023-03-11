@@ -53,7 +53,7 @@ const Chats = () => {
     const handleChatName = (chat) => {
         if (auth?.currentUser?.displayName) {
             if (auth?.currentUser?.displayName === chat.data().users[0].name) {
-                 //For 'message yourself'
+                //For 'message yourself'
                 if (auth?.currentUser?.displayName === chat.data().users[0].name && auth?.currentUser?.displayName === chat.data().users[1].name) {
                     return auth?.currentUser?.displayName + '*(You)';
                 }
@@ -162,6 +162,21 @@ const Chats = () => {
         );
     }
 
+    const handleSubtitle = (chat) => {
+        if (chat.data().messages.length === 0) {
+            return "No messages yet";
+        } else {
+            return chat.data().messages[0].text;
+        }
+    }
+
+    const handleSubtitle2 = (chat) => {
+        const options = { year: '2-digit', month: 'numeric', day: 'numeric' };
+        const timestemp = new Date(chat.data().lastUpdated);
+        const date = timestemp.toLocaleDateString(undefined, options);
+        return date;
+    }
+
     return (
         <Pressable style={styles.container} onPress={deSelectItems}>
             {chats.length === 0 ? (
@@ -176,18 +191,19 @@ const Chats = () => {
                         <React.Fragment key={chat.id}>
                             <ContactRow style={getSelected(chat) ? styles.selectedContactRow : ""}
                                 name={handleChatName(chat)}
-                                subtitle={chat.data().messages.length === 0 ? "No messages yet" : chat.data().messages[0].text}
+                                subtitle={handleSubtitle(chat)}
+                                subtitle2={handleSubtitle2(chat)}
                                 onPress={() => handleOnPress(chat)}
                                 onLongPress={() => handleLongPress(chat)}
                                 selected={getSelected(chat)}
+                                showForwardIcon={false}
                             />
-                            <Separator />
                         </React.Fragment>
                     ))}
-
+                    <Separator />
                     <View style={styles.blankContainer} >
                         <Text style={{ fontSize: 12, fontWeight: 400, marginRight: 15, marginLeft: 15, marginTop: 15, marginBottom: 90 }}>
-                            <Ionicons name="lock-open-outline" size={12} />
+                            <Ionicons name="lock-open" size={12} style={{ color: '#565656' }} />
                             {' '}Your personal messages are not{' '}
                             <Text style={{ color: colors.teal }}>
                                 end-to-end-encrypted

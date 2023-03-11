@@ -3,7 +3,7 @@ import { Text, TouchableOpacity, View, StyleSheet } from "react-native";
 import { Ionicons } from '@expo/vector-icons'
 import { colors } from "../config/constants";
 
-const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected }) => {
+const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected, showForwardIcon = true, subtitle2 }) => {
     return (
         <TouchableOpacity style={[styles.row, style]} onPress={onPress} onLongPress={onLongPress}>
             <View style={styles.avatar}>
@@ -21,12 +21,19 @@ const ContactRow = ({ name, subtitle, onPress, style, onLongPress, selected }) =
                 </Text>
             </View>
 
+            <View style={styles.textsContainer}>
+                <Text style={styles.subtitle2}>
+                    {subtitle2}
+                </Text>
+            </View>
+
             {selected &&
-                <View style={styles.overlay}>
+                <View style={showForwardIcon ? styles.overlay : styles.overlay2}>
                     <Ionicons name="checkmark-outline" size={16} color={'white'} />
                 </View>
             }
-            <Ionicons name="chevron-forward-outline" size={20} />
+            {showForwardIcon && <Ionicons name="chevron-forward-outline" size={20} />}
+
         </TouchableOpacity>
     )
 }
@@ -44,6 +51,11 @@ const styles = StyleSheet.create({
     subtitle: {
         marginTop: 2,
         color: '#565656'
+    },
+    subtitle2: {
+        fontSize: 12,
+        left: 96,
+        color: '#565656',
     },
     textsContainer: {
         flex: 1,
@@ -72,6 +84,18 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         top: 18,
         right: 278
+    },
+    overlay2: {
+        width: 22,
+        height: 22,
+        backgroundColor: colors.teal,
+        borderRadius: 11,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderColor: 'black',
+        borderWidth: 1.5,
+        top: 18,
+        right: 298
     },
 })
 
