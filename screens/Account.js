@@ -4,7 +4,8 @@ import { colors } from "../config/constants";
 import Separator from "../components/Separator";
 import Cell from "../components/Cell";
 import { deleteUser, signOut } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { auth, database } from '../config/firebase';
+import { deleteDoc, doc } from "firebase/firestore";
 
 const Account = ({ navigation }) => {
 
@@ -14,6 +15,7 @@ const Account = ({ navigation }) => {
 
     const deleteAccount = () => {
         deleteUser(auth?.currentUser).catch(error => console.log('Error deleting: ', error));
+        deleteDoc(doc(database, 'users', auth?.currentUser.email));
     };
 
     return (
