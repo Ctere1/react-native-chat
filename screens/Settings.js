@@ -70,7 +70,6 @@ const Settings = ({ navigation }) => {
 const styles = StyleSheet.create({
     contactRow: {
         backgroundColor: 'white',
-        marginTop: 16,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderColor: colors.border
     },
