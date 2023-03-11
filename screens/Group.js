@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Text, View, StyleSheet, Pressable, ScrollView, TouchableOpacity } from "react-native";
 import { colors } from "../config/constants";
-import Separator from "../components/Separator";
-import Cell from "../components/Cell";
 import { auth, database } from '../config/firebase';
 import { useNavigation } from "@react-navigation/native";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, orderBy, query, setDoc, where } from "firebase/firestore";
 import ContactRow from "../components/ContactRow";
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons';
 
 const Group = () => {
     const navigation = useNavigation();
     const [selectedItems, setSelectedItems] = useState([]);
+    const [selectedUsers, setSelectedUsers] = useState([]);
     const [users, setUsers] = useState([]);
 
     useEffect(() => {
@@ -61,8 +60,7 @@ const Group = () => {
     }
 
     const handleOnPress = (user) => {
-        selectItems(user)
-        //navigation.navigate('Chat', { id: chat.id })
+        selectItems(user);
     }
 
     const selectItems = (user) => {
@@ -72,6 +70,7 @@ const Group = () => {
             );
             return setSelectedItems([...newListItems]);
         }
+        setSelectedUsers([...selectedUsers, user]);
         setSelectedItems([...selectedItems, user.id]);
     }
 
@@ -81,11 +80,30 @@ const Group = () => {
 
     const deSelectItems = () => {
         setSelectedItems([]);
+        setSelectedUsers([]);
     };
 
     const handleFabPress = () => {
-        alert('Navigation to new group touched');
-        // navigation.navigate('Users');
+        let users = [];
+        //Add admin first to group
+        users.push({ email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false });
+        selectedUsers.map(user => {
+            //Add other users
+            users.push({ email: user.data().email, name: user.data().name, deletedFromChat: false });
+        })
+        //Creates new Group chat
+        const groupName = 'GROUP ' + Math.floor(Math.random() * 10) + 1 + '🌍';
+        const newRef = doc(collection(database, "chats"));
+        setDoc(newRef, {
+            lastUpdated: Date.now(),
+            users: users,
+            messages: [],
+            groupName: groupName, //TODO admin can set group name
+            groupAdmins: [auth?.currentUser?.email] //TODO can change group admins later
+        }).then(
+            navigation.navigate('Chat', { id: newRef.id, chatName: groupName })
+        );
+        deSelectItems();
     }
 
     return (
@@ -98,7 +116,10 @@ const Group = () => {
                 </View>
             ) : (
                 <ScrollView>
-                    {users.map(user => (
+                    {users.map(user =>
+                    (
+                        user.data().email != auth?.currentUser?.email &&
+
                         <React.Fragment key={user.id}>
                             <ContactRow style={getSelected(user) ? styles.selectedContactRow : ""}
                                 name={handleName(user)}
@@ -140,6 +161,9 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1
+    },
+    textContainer: {
+        fontSize: 16
     },
     blankContainer: {
         flex: 1,

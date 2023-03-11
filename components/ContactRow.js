@@ -50,7 +50,8 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         marginTop: 2,
-        color: '#565656'
+        color: '#565656',
+        width: 240
     },
     subtitle2: {
         fontSize: 12,

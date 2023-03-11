@@ -21,9 +21,11 @@ const Users = () => {
         });
 
         //Get existing chats to avoid creating duplicate chats
+        //Do not include group chats to avoid conflict chats --> where('groupName', "==", '')
         const collectionChatsRef = collection(database, 'chats');
         const q2 = query(collectionChatsRef,
-            where('users', "array-contains", { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false })
+            where('users', "array-contains", { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false }),
+            where('groupName', "==", ''),
         );
         onSnapshot(q2, (doc) => {
             doc.docs.map(existingChat => {
@@ -44,7 +46,7 @@ const Users = () => {
         alert('New user');
     }
 
-    const handleNavigate = async (user) => {
+    const handleNavigate = (user) => {
         let navigationChatID = '';
         let messageYourselfChatID = '';
 
@@ -90,15 +92,17 @@ const Users = () => {
         } else {
             //Creates new chat
             const newRef = doc(collection(database, "chats"));
-            await setDoc(newRef, {
+            setDoc(newRef, {
                 lastUpdated: Date.now(),
+                groupName: '', //It is not a group chat
                 users: [
                     { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false },
                     { email: user.data().email, name: user.data().name, deletedFromChat: false }
                 ],
                 messages: []
-            });
-            navigation.navigate('Chat', { id: newRef.id });
+            }).then(
+                navigation.navigate('Chat', { id: newRef.id, chatName: handleName(user) })
+            );
         }
 
     }
@@ -161,6 +165,7 @@ const Users = () => {
                                 name={handleName(user)}
                                 subtitle={handleSubtitle(user)}
                                 onPress={() => handleNavigate(user)}
+                                showForwardIcon={false}
                             />
                         </React.Fragment>
                     ))}

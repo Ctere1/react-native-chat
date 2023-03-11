@@ -51,7 +51,9 @@ const Chats = () => {
     }, [selectedItems]);
 
     const handleChatName = (chat) => {
-        if (auth?.currentUser?.displayName) {
+        if (chat.data().groupName) {
+            return chat.data().groupName;
+        } else if (auth?.currentUser?.displayName) {
             if (auth?.currentUser?.displayName === chat.data().users[0].name) {
                 //For 'message yourself'
                 if (auth?.currentUser?.displayName === chat.data().users[0].name && auth?.currentUser?.displayName === chat.data().users[1].name) {
@@ -80,7 +82,7 @@ const Chats = () => {
         if (selectedItems.length) {
             return selectItems(chat)
         }
-        navigation.navigate('Chat', { id: chat.id })
+        navigation.navigate('Chat', { id: chat.id, chatName: handleChatName(chat) })
     }
 
     const handleLongPress = (chat) => {
@@ -166,7 +168,32 @@ const Chats = () => {
         if (chat.data().messages.length === 0) {
             return "No messages yet";
         } else {
-            return chat.data().messages[0].text;
+            if (chat.data().groupName != '') { //It is group chat
+                if (auth?.currentUser?.email == chat.data().messages[0].user._id) { //Yours message
+                    //Check lenght of the last message and add three dot...
+                    if (chat.data().messages[0].text.length > 20) {
+                        return 'You: ' + chat.data().messages[0].text.substring(0, 20) + '...';
+                    } else {
+                        return 'You: ' + chat.data().messages[0].text.substring(0, 20);
+                    }
+                } else {//Others message
+                    //Get first name
+                    const firstName = chat.data().messages[0].user.name.substring(0, chat.data().messages[0].user.name.indexOf(' '));
+                    //Check lenght of the last message and add three dot...
+                    if (chat.data().messages[0].text.length > 20) {
+                        return firstName + ': ' + chat.data().messages[0].text.substring(0, 20) + '...';
+                    } else {
+                        return firstName + ': ' + chat.data().messages[0].text.substring(0, 20);
+                    }
+                }
+            } else { //It is not group chat
+                //Check lenght of the last message and add three dot...
+                if (chat.data().messages[0].text.length > 20) {
+                    return chat.data().messages[0].text.substring(0, 20) + '...';
+                } else {
+                    return chat.data().messages[0].text.substring(0, 20);
+                }
+            }
         }
     }
 

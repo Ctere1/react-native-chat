@@ -6,8 +6,10 @@ import { auth, database } from '../config/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { colors } from '../config/constants';
 import EmojiModal from 'react-native-emoji-modal';
+import { useNavigation } from '@react-navigation/native';
 
 function Chat({ route }) {
+    const navigation = useNavigation();
     const [messages, setMessages] = useState([]);
     const [modal, setModal] = useState(false);
 
@@ -22,6 +24,12 @@ function Chat({ route }) {
             }))
             );
         });
+
+        //Set Header
+        navigation.setOptions({
+            headerTitle: route.params.chatName
+        });
+
         return unsubscribe;
     }, [route.params.id]);
 
