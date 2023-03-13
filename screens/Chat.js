@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, StyleSheet, TouchableOpacity, Keyboard, Text } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Keyboard, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from '@expo/vector-icons'
 import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat'
 import { auth, database } from '../config/firebase';
@@ -34,7 +34,7 @@ function Chat({ route }) {
             headerTitle: route.params.chatName
         });
 
-        return unsubscribe;
+        return () => unsubscribe();
     }, [route.params.id]);
 
     const onSend = useCallback((m = []) => {
@@ -167,6 +167,14 @@ function Chat({ route }) {
         }
     }
 
+    function renderLoading() {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size='large' color={colors.teal} />
+            </View>
+        );
+    }
+
     return (
         <>
             <GiftedChat
@@ -174,6 +182,10 @@ function Chat({ route }) {
                 showAvatarForEveryMessage={false}
                 showUserAvatar={false}
                 onSend={messages => onSend(messages)}
+                imageStyle={{
+                    height: 212,
+                    width: 212
+                }}
                 messagesContainerStyle={{
                     backgroundColor: '#fff'
                 }}
@@ -195,6 +207,7 @@ function Chat({ route }) {
                 scrollToBottom={true}
                 onPressActionButton={handleEmojiPanel}
                 scrollToBottomStyle={styles.scrollToBottomStyle}
+                renderLoading={renderLoading}
             // onInputTextChanged={handleTyping}
             // isTyping={handleTyping}
             // shouldUpdateMessage={() => { return false; }}
@@ -270,6 +283,11 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     }
 })
 

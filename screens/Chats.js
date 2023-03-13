@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, StyleSheet, View, TouchableOpacity, Text, ScrollView, Pressable, BackHandler, Alert } from "react-native";
+import { SafeAreaView, StyleSheet, View, TouchableOpacity, Text, ScrollView, Pressable, BackHandler, Alert, ActivityIndicator } from "react-native";
 import ContactRow from '../components/ContactRow';
 import Separator from "../components/Separator";
 import { useNavigation } from '@react-navigation/native';
@@ -11,6 +11,8 @@ import { colors } from "../config/constants";
 const Chats = () => {
     const navigation = useNavigation();
     const [chats, setChats] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [lastAccess, setLastAccess] = useState([]);
     const [selectedItems, setSelectedItems] = useState([]);
 
     useEffect(() => {
@@ -19,7 +21,10 @@ const Chats = () => {
             where('users', "array-contains", { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false }),
             orderBy("lastUpdated", "desc")
         );
-        onSnapshot(q, (doc) => {
+        const unsubscribe = onSnapshot(q, (doc) => {
+            if (doc.docs.length == 0) {
+                setLoading(false);
+            }
             setChats(doc.docs);
         });
 
@@ -48,6 +53,7 @@ const Chats = () => {
         }
 
 
+        return () => unsubscribe();
     }, [selectedItems]);
 
     const handleChatName = (chat) => {
@@ -83,6 +89,20 @@ const Chats = () => {
             return selectItems(chat)
         }
         navigation.navigate('Chat', { id: chat.id, chatName: handleChatName(chat) })
+
+        //TODO CHECK THIS
+        // //SET LAST ACCESS TO CHAT FOR EACH USER
+        // onSnapshot(doc(database, 'chats', chat.id), (doc) => {
+        //     setLastAccess(doc.data().lastAccess.map((user) => ({
+        //         email: user.email,
+        //         date: auth?.currentUser?.email == user.email ? Date.now() : user.date,
+        //     })));
+        // });
+
+
+        // if (lastAccess.length > 0) {
+        //     setDoc(doc(database, 'chats', chat.id), { lastAccess: lastAccess, }, { merge: true });
+        // }
     }
 
     const handleLongPress = (chat) => {
@@ -226,11 +246,19 @@ const Chats = () => {
     return (
         <Pressable style={styles.container} onPress={deSelectItems}>
             {chats.length === 0 ? (
-                <View style={styles.blankContainer} >
-                    <Text style={styles.textContainer}>
-                        No conversations yet
-                    </Text>
-                </View>
+                <>
+                    {loading == true ? (
+                        <ActivityIndicator size='large' style={styles.loadingContainer} />
+                    ) :
+                        (
+                            <View style={styles.blankContainer}>
+                                <Text style={styles.textContainer}>
+                                    No conversations yet
+                                </Text>
+                            </View>
+                        )
+                    }
+                </>
             ) : (
                 <ScrollView >
                     {chats.map(chat => (
@@ -305,6 +333,12 @@ const styles = StyleSheet.create({
         color: colors.teal,
         fontSize: 18,
         fontWeight: 400,
+    },
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: colors.teal
     }
 })
 export default Chats;

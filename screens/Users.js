@@ -99,6 +99,9 @@ const Users = () => {
                     { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false },
                     { email: user.data().email, name: user.data().name, deletedFromChat: false }
                 ],
+                lastAccess: [
+                    { email: auth?.currentUser?.email, date: Date.now(), },
+                    { email: user.data().email, date: '', }],
                 messages: []
             }).then(
                 navigation.navigate('Chat', { id: newRef.id, chatName: handleName(user) })
