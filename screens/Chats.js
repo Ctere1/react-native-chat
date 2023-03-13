@@ -171,7 +171,9 @@ const Chats = () => {
             if (chat.data().groupName != '') { //It is group chat
                 if (auth?.currentUser?.email == chat.data().messages[0].user._id) { //Yours message
                     //Check lenght of the last message and add three dot...
-                    if (chat.data().messages[0].text.length > 20) {
+                    if (chat.data().messages[0].image && chat.data().messages[0].image != '') {
+                        return 'You sent an image';
+                    } else if (chat.data().messages[0].text.length > 20) {
                         return 'You: ' + chat.data().messages[0].text.substring(0, 20) + '...';
                     } else {
                         return 'You: ' + chat.data().messages[0].text.substring(0, 20);
@@ -180,18 +182,35 @@ const Chats = () => {
                     //Get first name
                     const firstName = chat.data().messages[0].user.name.substring(0, chat.data().messages[0].user.name.indexOf(' '));
                     //Check lenght of the last message and add three dot...
-                    if (chat.data().messages[0].text.length > 20) {
+                    if (chat.data().messages[0].image && chat.data().messages[0].image != '') {
+                        return firstName + ' sent an image';
+                    } else if (chat.data().messages[0].text.length > 20) {
                         return firstName + ': ' + chat.data().messages[0].text.substring(0, 20) + '...';
                     } else {
                         return firstName + ': ' + chat.data().messages[0].text.substring(0, 20);
                     }
                 }
             } else { //It is not group chat
-                //Check lenght of the last message and add three dot...
-                if (chat.data().messages[0].text.length > 20) {
-                    return chat.data().messages[0].text.substring(0, 20) + '...';
-                } else {
-                    return chat.data().messages[0].text.substring(0, 20);
+                if (auth?.currentUser?.email == chat.data().messages[0].user._id) { //Yours message
+                    //Check lenght of the last message and add three dot...
+                    if (chat.data().messages[0].image && chat.data().messages[0].image != '') {
+                        return 'You sent an image';
+                    } else if (chat.data().messages[0].text.length > 20) {
+                        return chat.data().messages[0].text.substring(0, 20) + '...';
+                    } else {
+                        return chat.data().messages[0].text.substring(0, 20);
+                    }
+                } else {//Others message
+                    //Get first name
+                    const firstName = chat.data().messages[0].user.name.substring(0, chat.data().messages[0].user.name.indexOf(' '));
+                    //Check lenght of the last message and add three dot...
+                    if (chat.data().messages[0].image && chat.data().messages[0].image != '') {
+                        return firstName + ' sent an image';
+                    } else if (chat.data().messages[0].text.length > 20) {
+                        return chat.data().messages[0].text.substring(0, 20) + '...';
+                    } else {
+                        return chat.data().messages[0].text.substring(0, 20);
+                    }
                 }
             }
         }

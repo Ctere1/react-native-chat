@@ -3,10 +3,13 @@ import { View, StyleSheet, TouchableOpacity, Keyboard, Text } from "react-native
 import { Ionicons } from '@expo/vector-icons'
 import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat'
 import { auth, database } from '../config/firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { colors } from '../config/constants';
 import EmojiModal from 'react-native-emoji-modal';
 import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import uuid from 'react-native-uuid';
 
 function Chat({ route }) {
     const navigation = useNavigation();
@@ -20,9 +23,10 @@ function Chat({ route }) {
                 createdAt: message.createdAt.toDate(),
                 text: message.text,
                 user: message.user,
-                sent: true,
-            }))
-            );
+                sent: message.sent,
+                received: message.received,
+                image: message.image ?? '',
+            })));
         });
 
         //Set Header
@@ -34,8 +38,63 @@ function Chat({ route }) {
     }, [route.params.id]);
 
     const onSend = useCallback((m = []) => {
-        setDoc(doc(database, 'chats', route.params.id), { messages: GiftedChat.append(messages, m), lastUpdated: Date.now() }, { merge: true });
+        const messagesWillSend = [{ ...m[0], sent: true, received: false }];
+        setDoc(doc(database, 'chats', route.params.id), { messages: GiftedChat.append(messages, messagesWillSend), lastUpdated: Date.now() }, { merge: true });
     }, [route.params.id, messages]);
+
+
+    const pickImage = async () => {
+        // No permissions request is necessary for launching the image library
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            // aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            await uploadImageAsync(result.assets[0].uri);
+        }
+    };
+
+    async function uploadImageAsync(uri) {
+        // Why are we using XMLHttpRequest? See:
+        // https://github.com/expo/expo/issues/2402#issuecomment-443726662
+        const blob = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                resolve(xhr.response);
+            };
+            xhr.onerror = function (e) {
+                console.log(e);
+                reject(new TypeError("Network request failed"));
+            };
+            xhr.responseType = "blob";
+            xhr.open("GET", uri, true);
+            xhr.send(null);
+        });
+        const randomString = uuid.v4();
+        const fileRef = ref(getStorage(), randomString);
+        const result = await uploadBytes(fileRef, blob);
+
+        // We're done with the blob, close and release it
+        blob.close();
+        const uploadedFileString = await getDownloadURL(fileRef);
+
+        onSend([{
+            _id: randomString,
+            createdAt: new Date(),
+            text: '',
+            image: uploadedFileString,
+            user: {
+                _id: auth?.currentUser?.email,
+                name: auth?.currentUser?.displayName,
+                avatar: 'https://i.pravatar.cc/300'
+            }
+        }]);
+        // console.log(uploadedFileString);
+    }
+
 
     function renderBubble(props) {
         return (
@@ -55,21 +114,33 @@ function Chat({ route }) {
 
     function renderSend(props) {
         return (
-            <Send {...props} >
-                <View style={{ justifyContent: 'center', height: '100%', marginRight: 4 }}>
-                    <Ionicons
-                        name='send'
-                        size={24}
-                        color={colors.teal}
-                    />
-                </View>
-            </Send>
+            <>
+                <TouchableOpacity style={styles.addImageIcon} onPress={pickImage}>
+                    <View>
+                        <Ionicons
+                            name='attach-outline'
+                            size={32}
+                            color={colors.teal} />
+                    </View>
+                </TouchableOpacity>
+                <Send {...props}>
+                    <View style={{ justifyContent: 'center', height: '100%', marginLeft: 8, marginRight: 4, marginTop: 12 }}>
+                        <Ionicons
+                            name='send'
+                            size={24}
+                            color={colors.teal} />
+                    </View>
+                </Send>
+            </>
         )
     }
 
     function renderInputToolbar(props) {
         return (
-            <InputToolbar {...props} containerStyle={styles.inputToolbar} renderActions={renderActions} >
+            <InputToolbar {...props}
+                containerStyle={styles.inputToolbar}
+                renderActions={renderActions}
+            >
             </InputToolbar >
         )
     }
@@ -77,7 +148,7 @@ function Chat({ route }) {
     function renderActions() {
         return (
             <TouchableOpacity style={styles.emojiIcon} onPress={handleEmojiPanel}>
-                <View >
+                <View>
                     <Ionicons
                         name='happy-outline'
                         size={32}
@@ -120,7 +191,7 @@ function Chat({ route }) {
                 renderUsernameOnMessage={true}
                 renderAvatarOnTop={true}
                 renderInputToolbar={renderInputToolbar}
-                minInputToolbarHeight={48}
+                minInputToolbarHeight={56}
                 scrollToBottom={true}
                 onPressActionButton={handleEmojiPanel}
                 scrollToBottomStyle={styles.scrollToBottomStyle}
@@ -141,8 +212,8 @@ function Chat({ route }) {
                     onEmojiSelected={(emoji) => {
                         // console.log(emoji)
                         // setEmojiMessage(emoji)
-                        onSend({
-                            _id: Math.random(),
+                        onSend([{
+                            _id: uuid.v4(),
                             createdAt: new Date(),
                             text: emoji,
                             user: {
@@ -150,7 +221,7 @@ function Chat({ route }) {
                                 name: auth?.currentUser?.displayName,
                                 avatar: 'https://i.pravatar.cc/300'
                             }
-                        });
+                        }]);
                         //TODO handle this function. Return new GiftedChat component maybe??
                     }}
                 />
@@ -162,7 +233,7 @@ function Chat({ route }) {
 
 const styles = StyleSheet.create({
     inputToolbar: {
-        bottom: 2,
+        bottom: 6,
         marginLeft: 8,
         marginRight: 8,
         borderRadius: 16,
@@ -193,6 +264,12 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 12,
         right: 12
+    },
+    addImageIcon: {
+        bottom: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
     }
 })
 
