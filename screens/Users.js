@@ -86,9 +86,9 @@ const Users = () => {
         });
 
         if (messageYourselfChatID != '') {
-            navigation.navigate('Chat', { id: messageYourselfChatID });
+            navigation.navigate('Chat', { id: messageYourselfChatID, chatName: handleName(user) });
         } else if (navigationChatID != '') {
-            navigation.navigate('Chat', { id: navigationChatID });
+            navigation.navigate('Chat', { id: navigationChatID, chatName: handleName(user) });
         } else {
             //Creates new chat
             const newRef = doc(collection(database, "chats"));

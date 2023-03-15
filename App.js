@@ -60,7 +60,7 @@ const TabNavigator = () => (
 const MainStack = () => (
   <Stack.Navigator>
     <Stack.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
-    <Stack.Screen name="Chat" component={Chat} />
+    <Stack.Screen name="Chat" component={Chat} options={({ route }) => ({ headerTitle: route.params.chatName })} />
     <Stack.Screen name="Users" component={Users} options={{ title: 'Select User' }} />
     <Stack.Screen name="Profile" component={Profile} />
     <Stack.Screen name="About" component={About} />

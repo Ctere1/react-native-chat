@@ -19,7 +19,9 @@ const Group = () => {
         onSnapshot(q, (doc) => {
             setUsers(doc.docs);
         });
+    });
 
+    useEffect(() => {
         // SELECTED USERS COUNT 
         if (selectedItems.length > 0) {
             navigation.setOptions({
@@ -70,8 +72,15 @@ const Group = () => {
             );
             return setSelectedItems([...newListItems]);
         }
-        setSelectedUsers([...selectedUsers, user]);
         setSelectedItems([...selectedItems, user.id]);
+
+        if (selectedUsers.includes(user.id)) {
+            const newListItems = selectedItems.filter(
+                listItem => listItem !== user.id,
+            );
+            return setSelectedItems([...newListItems]);
+        }
+        setSelectedUsers([...selectedUsers, user]);
     }
 
     const getSelected = (user) => {
@@ -92,7 +101,7 @@ const Group = () => {
             users.push({ email: user.data().email, name: user.data().name, deletedFromChat: false });
         })
         //Creates new Group chat
-        const groupName = 'GROUP ' + Math.floor(Math.random() * 10) + 1 + '🌍';
+        const groupName = 'GROUP ' + Math.floor(Math.random() * 10) + '🌍';
         const newRef = doc(collection(database, "chats"));
         setDoc(newRef, {
             lastUpdated: Date.now(),

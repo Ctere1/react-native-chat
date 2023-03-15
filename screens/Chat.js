@@ -29,10 +29,6 @@ function Chat({ route }) {
             })));
         });
 
-        //Set Header
-        navigation.setOptions({
-            headerTitle: route.params.chatName
-        });
 
         return () => unsubscribe();
     }, [route.params.id]);

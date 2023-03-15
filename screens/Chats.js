@@ -28,6 +28,10 @@ const Chats = () => {
             setChats(doc.docs);
         });
 
+        return () => unsubscribe();
+    });
+
+    useEffect(() => {
         // DELETE BUTTON 
         if (selectedItems.length > 0) {
             navigation.setOptions({
@@ -52,9 +56,7 @@ const Chats = () => {
             );
         }
 
-
-        return () => unsubscribe();
-    }, [selectedItems]);
+    }, [selectedItems])
 
     const handleChatName = (chat) => {
         if (chat.data().groupName) {
