@@ -18,6 +18,13 @@
   <a href="#contributors">Contributors</a> 
 </p>
 
+<div align="center">
+
+![GitHub Repo stars](https://img.shields.io/github/stars/Ctere1/react-native-chat)
+![GitHub forks](https://img.shields.io/github/forks/Ctere1/react-native-chat)
+![GitHub watchers](https://img.shields.io/github/watchers/Ctere1/react-native-chat)
+
+</div>
 
 ## ℹ️ Introduction
 
