@@ -10,12 +10,12 @@
 
 <p align="center">
   <a href="#introduction">Introduction</a> •
-  <a href="#development-guide">Features</a> •
-  <a href="#development-guide">Installation Guide</a> •
-  <a href="#clientusage">Screenshots</a> •
-  <a href="#development-guide">Credits</a> •
-  <a href="#development-guide">License</a> •
-  <a href="#development-guide">Contributors</a> 
+  <a href="#features">Features</a> •
+  <a href="#installation-guide">Installation Guide</a> •
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#credits">Credits</a> •
+  <a href="#license">License</a> •
+  <a href="#contributors">Contributors</a> 
 </p>
 
 
