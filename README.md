@@ -73,24 +73,24 @@ It uses [Firebase](https://firebase.google.com/) realtime database.
 
 ## 🪟Screenshots
 ### **Login-Signup Pages**
-| User can login on this page                    |  User can signup on this page                                                        |  
-| :--------------------------------------------  | :----------------------------------------------------------------------------------  |
+| User can login      |  User can signup    |  
+| :-----------------  | :-----------------  |
 | <img src="https://user-images.githubusercontent.com/62745858/229377832-f0987252-55c7-4293-95f5-871d02e19e27.png"  width="250">        |  <img src="https://user-images.githubusercontent.com/62745858/229377844-75e5815a-fef7-4fc1-a9bd-c00cae2a2e7e.png"  width="250">                                 |
 
 ### **Chats Page**
-| User can access chats on this page             |  User can see all users on this page                                        |  User can create new group chat on this page                                         | 
-| :--------------------------------------------  | :----------------------------------------------------------------------------------  | :----------------------------------------------------------------------------------  |
+| User can access chats   |  User can see all users   |  User can create new group chat      | 
+| :--------------------   | :-----------------------  | :----------------------------------  |
 | <img src="https://user-images.githubusercontent.com/62745858/229378355-aaf9e2b4-e4c6-4ab8-b915-ae0bd9ed0332.png"  width="250">        |  <img src="https://user-images.githubusercontent.com/62745858/229378356-3bf317cc-dc9b-4f99-b542-c6160b7dcd5d.png"  width="250">                                 |  <img src="https://user-images.githubusercontent.com/62745858/229378358-14ed60d2-7fef-4ead-ba1c-8a0f51ac4707.png"  width="250">  
 
 
 ### **Settings Page**
 | User can access settings |  User can see the profile section |  User can see the help section  | User can see the account section  | 
-| :--------------------------------------------  | :----------------------------------------------------------------------------------  | :----------------------------------------------------------------------------------  | :---------------------------------------------------------------------------------- |
+| :----------------------  | :-------------------------------  | :-----------------------------  | :-------------------------------- |
 | <img src="https://user-images.githubusercontent.com/62745858/229378800-6df72401-545e-4dac-887e-02596a114987.png"  width="250">        |  <img src="https://user-images.githubusercontent.com/62745858/229378809-84d2196f-38d4-41f5-96af-92a4a4edb926.png"  width="250">                                 |  <img src="https://user-images.githubusercontent.com/62745858/229378815-42c7d883-cb05-45ab-901a-e54d98626906.png"  width="250">                                 |  <img src="https://user-images.githubusercontent.com/62745858/229378826-0140102a-e98c-4db8-bb87-a300c2dba982.png"  width="250">  
 
 ### **Chat Page**
-| Main Chat Screen                               |    
-| :--------------------------------------------  | 
+| Main Chat Screen   |    
+| :----------------  | 
 | <img src="https://user-images.githubusercontent.com/62745858/229378919-8329b3da-a2c4-4a79-9ee9-ea543a31586e.png"  width="250">        | 
 
 ## 📝Credits
