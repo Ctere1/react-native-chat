@@ -29,7 +29,7 @@
 ## ℹ️ Introduction
 
 Real Time Chat Application that written in [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/) platform.
-It uses [Firebase](https://firebase.google.com/) realtime database.  
+It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime database.  
 
 >**Note**  
   You can check the screenshots below
@@ -37,14 +37,17 @@ It uses [Firebase](https://firebase.google.com/) realtime database.
  
 ## ⚡Features
  
- | Feature                    | Description                                                                          |                                 
- | :------------------------  | :----------------------------------------------------------------------------------  |
- | `Signup and Login`         |   Basic security for accessing the application                                       |
- | `Send Text Message`        |   Essential for casual messaging                                                     |
- | `Send Picture`             |   You can send pictures without losing quality                                       |
- | `Group Chat`               |   You can send your messages to multiple people at the same time                     |
- | `Delete Chat`              |   You can delete the chat                                                            |
- | `Delete Account`           |   You can delete your account                                                        |
+ | Feature                    | Description                                                                                            |    
+ | :------------------------  | :--------------------------------------------------------------------------------------------------    |
+ | `Signup and Login`         |   Firebase Email/Password sign-in method. Allow users to sign up using their email address and password|
+ | `Send Text Message`        |   Essential for casual messaging                                                                       |
+ | `Send Picture`             |   You can send pictures without losing quality                                                         |
+ | `Group Chat`               |   You can send your messages to multiple people at the same time                                       |
+ | `Delete Chat`              |   You can delete chats after holding and selecting them                                                |
+ | `Delete Account`           |   You can delete your account                                                                          |
+ | `Real Time Chat`           |   The last incoming message will be placed at the top of the chat screen                               |
+ | `Users List`               |   Registered users sorted by alphabetical index (A -> Z)                                               |
+ | `Note to Self`             |   You can also take notes by sending a message to yourself                                             |
 
 ## 💾Installation Guide
  
@@ -68,7 +71,7 @@ It uses [Firebase](https://firebase.google.com/) realtime database.
  ```
  
  > **Warning**  
-   Do not forget setup `.env` file for Firebase connection
+   Do not forget setup `.env` file for Firebase connection. Please see the [doc](https://firebase.google.com/docs/firestore/quickstart)
 
 
 ## 🪟Screenshots
@@ -102,6 +105,7 @@ This software uses the following packages:
 - [React Native](https://reactnative.dev/)
 - [Firebase](https://firebase.google.com/)
 - [react-native-gifted-chat](https://github.com/FaridSafi/react-native-gifted-chat)
+- [react-native-emoji-modal](https://github.com/staltz/react-native-emoji-modal)
 
 
 ## ©License
