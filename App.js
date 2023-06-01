@@ -52,7 +52,7 @@ const TabNavigator = () => (
     headerShown: true,
     presentation: 'modal'
   })}>
-    <Tab.Screen name="Chats" component={Chats} options={{ tabBarBadge: 2 }} />
+    <Tab.Screen name="Chats" component={Chats} />
     <Tab.Screen name="Settings" component={Settings} />
   </Tab.Navigator >
 )
