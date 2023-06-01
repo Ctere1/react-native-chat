@@ -31,8 +31,9 @@
 Real Time Chat Application that written in [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/) platform.
 It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime database.  
 
-For the report see [Rapor.pdf](https://github.com/Ctere1/react-native-chat/blob/master/RAPOR.pdf)     
-For figma design see [Figma.pdf](https://github.com/Ctere1/react-native-chat/blob/master/Figma.pdf)
+- For the report see [Rapor.pdf](https://github.com/Ctere1/react-native-chat/blob/master/RAPOR.pdf)     
+- For figma design see [Figma.pdf](https://github.com/Ctere1/react-native-chat/blob/master/Figma.pdf)   
+- For the live demo video see [Demo.mp4](https://github.com/Ctere1/react-native-chat/blob/master/ReactNativeChat-Live-Demo.mp4)        
 
 >**Note**  
   You can check the screenshots below
