@@ -20,9 +20,9 @@
 
 <div align="center">
 
-![GitHub Repo stars](https://img.shields.io/github/stars/Ctere1/react-native-chat)
-![GitHub forks](https://img.shields.io/github/forks/Ctere1/react-native-chat)
-![GitHub watchers](https://img.shields.io/github/watchers/Ctere1/react-native-chat)
+![GitHub Repo stars](https://img.shields.io/github/stars/Ctere1/react-native-chat?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Ctere1/react-native-chat?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/Ctere1/react-native-chat?style=social)
 
 </div>
 
