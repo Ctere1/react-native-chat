@@ -117,7 +117,7 @@ This software uses the following packages:
 
 
 ## ©License
-![GitHub](https://img.shields.io/github/license/Ctere1/react-native-chat?style=flat-square)
+![GitHub](https://img.shields.io/github/license/Ctere1/react-native-chat)
 
 ```
 Copyright (c) 2023 Cemil Tan
