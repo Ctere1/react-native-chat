@@ -9,7 +9,7 @@
 </h1>
 
 <p align="center">
-  <a href="#introduction">Introduction</a> •
+  <a href="#ℹ%EF%B8%8F-introduction">Introduction</a> •
   <a href="#features">Features</a> •
   <a href="#installation-guide">Installation Guide</a> •
   <a href="#screenshots">Screenshots</a> •
@@ -26,16 +26,21 @@
 
 </div>
 
+
+
 ## ℹ️ Introduction
 
-Real Time Chat Application that written in [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/) platform.
-It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime database.  
+- Real Time Chat Application that written in [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/) platform.
+- It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime database.
+- For the report see [Rapor.pdf](https://github.com/Ctere1/react-native-chat/blob/master/RAPOR.pdf).     
+- For figma design see [Figma.pdf](https://github.com/Ctere1/react-native-chat/blob/master/Figma.pdf).   
+- ~For the live demo video see [Demo.mp4](https://github.com/Ctere1/react-native-chat/blob/master/ReactNativeChat-Live-Demo.mp4).~
+- Live demo video:    
 
-- For the report see [Rapor.pdf](https://github.com/Ctere1/react-native-chat/blob/master/RAPOR.pdf)     
-- For figma design see [Figma.pdf](https://github.com/Ctere1/react-native-chat/blob/master/Figma.pdf)   
-- For the live demo video see [Demo.mp4](https://github.com/Ctere1/react-native-chat/blob/master/ReactNativeChat-Live-Demo.mp4)        
+https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8716-bf274c059d2e          
+  
 
->**Note**  
+>[!Note]  
   You can check the screenshots below
 
  
@@ -74,8 +79,8 @@ It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime databa
  $ expo start
  ```
  
- > **Warning**  
-   Do not forget to setup `.env` file for Firebase connection. Please see the [doc](https://firebase.google.com/docs/firestore/quickstart)
+ > [!Warning] 
+   Do not forget to setup `.env` file for Firebase connection. Please see the [doc](https://firebase.google.com/docs/firestore/quickstart).
 
 
 ## 🪟Screenshots
