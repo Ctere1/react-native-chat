@@ -33,6 +33,8 @@ It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime databa
 
 - For the live demo video see [Demo.mp4](https://github.com/Ctere1/react-native-chat/blob/master/ReactNativeChat-Live-Demo.mp4)        
 
+https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8716-bf274c059d2e
+
 >[!Note] 
   You can check the screenshots below
 
