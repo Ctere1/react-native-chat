@@ -33,7 +33,7 @@ It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime databa
 
 - For the live demo video see [Demo.mp4](https://github.com/Ctere1/react-native-chat/blob/master/ReactNativeChat-Live-Demo.mp4)        
 
->**Note**  
+>[!Note] 
   You can check the screenshots below
 
  
@@ -72,7 +72,7 @@ It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime databa
  $ npx expo start
  ```
  
- > **Warning**  
+ > [!Warning]  
    Do not forget to setup `.env` file for Firebase connection. Please see the [doc](https://firebase.google.com/docs/firestore/quickstart)
 
 
