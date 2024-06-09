@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
         right: 10,
         color: colors.teal,
         fontSize: 18,
-        fontWeight: 400,
+        fontWeight: "400",
     }
 })
 

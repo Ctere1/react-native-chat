@@ -55,7 +55,7 @@ const Chats = () => {
         return () => unsubscribe();
     }, [selectedItems]);
 
-    
+
     const handleChatName = (chat) => {
         if (chat.data().groupName) {
             return chat.data().groupName;
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
         left: 100,
         color: colors.teal,
         fontSize: 18,
-        fontWeight: 400,
+        fontWeight: "400",
     },
     loadingContainer: {
         flex: 1,

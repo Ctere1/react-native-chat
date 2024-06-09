@@ -26,21 +26,14 @@
 
 </div>
 
-
-
 ## ℹ️ Introduction
 
-- Real Time Chat Application that written in [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/) platform.
-- It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime database.
-- For the report see [Rapor.pdf](https://github.com/Ctere1/react-native-chat/blob/master/RAPOR.pdf).     
-- For figma design see [Figma.pdf](https://github.com/Ctere1/react-native-chat/blob/master/Figma.pdf).   
-- ~For the live demo video see [Demo.mp4](https://github.com/Ctere1/react-native-chat/blob/master/ReactNativeChat-Live-Demo.mp4).~
-- Live demo video:    
+Real Time Chat Application that written in [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/) platform.
+It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime database.  
 
-https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8716-bf274c059d2e          
-  
+- For the live demo video see [Demo.mp4](https://github.com/Ctere1/react-native-chat/blob/master/ReactNativeChat-Live-Demo.mp4)        
 
->[!Note]  
+>**Note**  
   You can check the screenshots below
 
  
@@ -76,11 +69,11 @@ https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8
  # Go into the repository
  $ cd react-native-chat
  # Run the expo
- $ expo start
+ $ npx expo start
  ```
  
- > [!Warning] 
-   Do not forget to setup `.env` file for Firebase connection. Please see the [doc](https://firebase.google.com/docs/firestore/quickstart).
+ > **Warning**  
+   Do not forget to setup `.env` file for Firebase connection. Please see the [doc](https://firebase.google.com/docs/firestore/quickstart)
 
 
 ## 🪟Screenshots
@@ -124,27 +117,7 @@ This software uses the following packages:
 ## ©License
 ![GitHub](https://img.shields.io/github/license/Ctere1/react-native-chat)
 
-```
-Copyright (c) 2023 Cemil Tan
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+[LICENSE](./LICENSE)
 
 ## 📌Contributors
 

@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     textContainer: {
         marginLeft: 16,
         fontSize: 16,
-        fontWeight: 300
+        fontWeight: "300",
     }
 })
 export default Users;

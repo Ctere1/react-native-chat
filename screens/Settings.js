@@ -56,7 +56,7 @@ const Settings = ({ navigation }) => {
 
             <TouchableOpacity style={styles.githubLink} onPress={() => openGithub('https://github.com/Ctere1/react-native-chat')}>
                 <View >
-                    <Text style={{ fontSize: 12, fontWeight: 400 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '400' }}>
                         <Ionicons name="logo-github" size={12} style={{ color: colors.teal }} />
                         {' '}App's Github
                     </Text>
