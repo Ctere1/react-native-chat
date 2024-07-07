@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, StyleSheet, TouchableOpacity, Keyboard, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from '@expo/vector-icons'
 import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat'
 import { auth, database } from '../config/firebase';
-import { doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { colors } from '../config/constants';
 import EmojiModal from 'react-native-emoji-modal';
@@ -19,32 +19,27 @@ function Chat({ route }) {
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(database, 'chats', route.params.id), (doc) => {
             setMessages(doc.data().messages.map((message) => ({
-                _id: message._id,
+                ...message,
                 createdAt: message.createdAt.toDate(),
-                text: message.text,
-                user: message.user,
-                sent: message.sent,
-                received: message.received,
                 image: message.image ?? '',
             })));
         });
-
 
         return () => unsubscribe();
     }, [route.params.id]);
 
     const onSend = useCallback((m = []) => {
         const messagesWillSend = [{ ...m[0], sent: true, received: false }];
-        setDoc(doc(database, 'chats', route.params.id), { messages: GiftedChat.append(messages, messagesWillSend), lastUpdated: Date.now() }, { merge: true });
+        setDoc(doc(database, 'chats', route.params.id), {
+            messages: GiftedChat.append(messages, messagesWillSend),
+            lastUpdated: Date.now()
+        }, { merge: true });
     }, [route.params.id, messages]);
 
-
     const pickImage = async () => {
-        // No permissions request is necessary for launching the image library
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
-            // aspect: [4, 3],
             quality: 1,
         });
 
@@ -53,30 +48,21 @@ function Chat({ route }) {
         }
     };
 
-    async function uploadImageAsync(uri) {
-        // Why are we using XMLHttpRequest? See:
-        // https://github.com/expo/expo/issues/2402#issuecomment-443726662
+    const uploadImageAsync = async (uri) => {
         const blob = await new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.onload = function () {
-                resolve(xhr.response);
-            };
-            xhr.onerror = function (e) {
-                console.log(e);
-                reject(new TypeError("Network request failed"));
-            };
+            xhr.onload = () => resolve(xhr.response);
+            xhr.onerror = () => reject(new TypeError("Network request failed"));
             xhr.responseType = "blob";
             xhr.open("GET", uri, true);
             xhr.send(null);
         });
         const randomString = uuid.v4();
         const fileRef = ref(getStorage(), randomString);
-        const result = await uploadBytes(fileRef, blob);
-
-        // We're done with the blob, close and release it
+        await uploadBytes(fileRef, blob);
         blob.close();
-        const uploadedFileString = await getDownloadURL(fileRef);
 
+        const uploadedFileString = await getDownloadURL(fileRef);
         onSend([{
             _id: randomString,
             createdAt: new Date(),
@@ -88,88 +74,71 @@ function Chat({ route }) {
                 avatar: 'https://i.pravatar.cc/300'
             }
         }]);
-        // console.log(uploadedFileString);
-    }
+    };
 
+    const renderBubble = useMemo(() => (props) => (
+        <Bubble
+            {...props}
+            wrapperStyle={{
+                right: { backgroundColor: colors.primary },
+                left: { backgroundColor: 'lightgrey' }
+            }}
+        />
+    ), []);
 
-    function renderBubble(props) {
-        return (
-            <Bubble
-                {...props}
-                wrapperStyle={{
-                    right: {
-                        backgroundColor: colors.primary
-                    },
-                    left: {
-                        backgroundColor: 'lightgrey'
-                    }
-                }}
-            />
-        )
-    }
-
-    function renderSend(props) {
-        return (
-            <>
-                <TouchableOpacity style={styles.addImageIcon} onPress={pickImage}>
-                    <View>
-                        <Ionicons
-                            name='attach-outline'
-                            size={32}
-                            color={colors.teal} />
-                    </View>
-                </TouchableOpacity>
-                <Send {...props}>
-                    <View style={{ justifyContent: 'center', height: '100%', marginLeft: 8, marginRight: 4, marginTop: 12 }}>
-                        <Ionicons
-                            name='send'
-                            size={24}
-                            color={colors.teal} />
-                    </View>
-                </Send>
-            </>
-        )
-    }
-
-    function renderInputToolbar(props) {
-        return (
-            <InputToolbar {...props}
-                containerStyle={styles.inputToolbar}
-                renderActions={renderActions}
-            >
-            </InputToolbar >
-        )
-    }
-
-    function renderActions() {
-        return (
-            <TouchableOpacity style={styles.emojiIcon} onPress={handleEmojiPanel}>
+    const renderSend = useMemo(() => (props) => (
+        <>
+            <TouchableOpacity style={styles.addImageIcon} onPress={pickImage}>
                 <View>
                     <Ionicons
-                        name='happy-outline'
+                        name='attach-outline'
                         size={32}
                         color={colors.teal} />
                 </View>
             </TouchableOpacity>
-        )
-    }
+            <Send {...props}>
+                <View style={{ justifyContent: 'center', height: '100%', marginLeft: 8, marginRight: 4, marginTop: 12 }}>
+                    <Ionicons
+                        name='send'
+                        size={24}
+                        color={colors.teal} />
+                </View>
+            </Send>
+        </>
+    ), []);
 
-    function handleEmojiPanel() {
+    const renderInputToolbar = useMemo(() => (props) => (
+        <InputToolbar {...props}
+            containerStyle={styles.inputToolbar}
+            renderActions={renderActions}
+        />
+    ), []);
+
+    const renderActions = useMemo(() => () => (
+        <TouchableOpacity style={styles.emojiIcon} onPress={handleEmojiPanel}>
+            <View>
+                <Ionicons
+                    name='happy-outline'
+                    size={32}
+                    color={colors.teal} />
+            </View>
+        </TouchableOpacity>
+    ), [modal]);
+
+    const handleEmojiPanel = useCallback(() => {
         if (modal) {
             setModal(false);
         } else {
             Keyboard.dismiss();
             setModal(true);
         }
-    }
+    }, [modal]);
 
-    function renderLoading() {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size='large' color={colors.teal} />
-            </View>
-        );
-    }
+    const renderLoading = useMemo(() => () => (
+        <View style={styles.loadingContainer}>
+            <ActivityIndicator size='large' color={colors.teal} />
+        </View>
+    ), []);
 
     return (
         <>
@@ -178,17 +147,9 @@ function Chat({ route }) {
                 showAvatarForEveryMessage={false}
                 showUserAvatar={false}
                 onSend={messages => onSend(messages)}
-                imageStyle={{
-                    height: 212,
-                    width: 212
-                }}
-                messagesContainerStyle={{
-                    backgroundColor: '#fff'
-                }}
-                textInputStyle={{
-                    backgroundColor: '#fff',
-                    borderRadius: 20,
-                }}
+                imageStyle={{ height: 212, width: 212 }}
+                messagesContainerStyle={{ backgroundColor: '#fff' }}
+                textInputStyle={{ backgroundColor: '#fff', borderRadius: 20 }}
                 user={{
                     _id: auth?.currentUser?.email,
                     name: auth?.currentUser?.displayName,
@@ -204,9 +165,6 @@ function Chat({ route }) {
                 onPressActionButton={handleEmojiPanel}
                 scrollToBottomStyle={styles.scrollToBottomStyle}
                 renderLoading={renderLoading}
-            // onInputTextChanged={handleTyping}
-            // isTyping={handleTyping}
-            // shouldUpdateMessage={() => { return false; }}
             />
 
             {modal &&
@@ -219,8 +177,6 @@ function Chat({ route }) {
                     emojiSize={66}
                     activeShortcutColor={colors.primary}
                     onEmojiSelected={(emoji) => {
-                        // console.log(emoji)
-                        // setEmojiMessage(emoji)
                         onSend([{
                             _id: uuid.v4(),
                             createdAt: new Date(),
@@ -231,11 +187,9 @@ function Chat({ route }) {
                                 avatar: 'https://i.pravatar.cc/300'
                             }
                         }]);
-                        //TODO handle this function. Return new GiftedChat component maybe??
                     }}
                 />
             }
-
         </>
     );
 }
@@ -254,19 +208,15 @@ const styles = StyleSheet.create({
         height: 32,
         borderRadius: 16,
     },
-    emojiModal: {
-
-    },
+    emojiModal: {},
     emojiContainerModal: {
         height: 348,
         width: 396,
     },
-    emojiBackgroundModal: {
-
-    },
+    emojiBackgroundModal: {},
     scrollToBottomStyle: {
         borderColor: colors.grey,
-        borderWidth: 2,
+        borderWidth: 1,
         width: 56,
         height: 56,
         borderRadius: 28,
@@ -285,6 +235,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     }
-})
+});
 
 export default Chat;

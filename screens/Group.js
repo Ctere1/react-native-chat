@@ -1,64 +1,46 @@
 import React, { useEffect, useState } from "react";
-import { Text, View, StyleSheet, Pressable, ScrollView, TouchableOpacity } from "react-native";
+import { Text, View, StyleSheet, Pressable, ScrollView, TouchableOpacity, Modal, TextInput } from "react-native";
 import { colors } from "../config/constants";
 import { auth, database } from '../config/firebase';
 import { useNavigation } from "@react-navigation/native";
-import { collection, doc, onSnapshot, orderBy, query, setDoc, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, orderBy, query, setDoc } from "firebase/firestore";
 import ContactRow from "../components/ContactRow";
 import { Ionicons } from '@expo/vector-icons';
 
 const Group = () => {
     const navigation = useNavigation();
     const [selectedItems, setSelectedItems] = useState([]);
-    const [selectedUsers, setSelectedUsers] = useState([]);
     const [users, setUsers] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [groupName, setGroupName] = useState("");
 
     useEffect(() => {
         const collectionUserRef = collection(database, 'users');
         const q = query(collectionUserRef, orderBy("name", "asc"));
-        onSnapshot(q, (doc) => {
-            setUsers(doc.docs);
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setUsers(snapshot.docs);
         });
-    });
+
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
-        // SELECTED USERS COUNT 
-        if (selectedItems.length > 0) {
-            navigation.setOptions({
-                headerRight: () => (
-                    <Text style={styles.itemCount}>
-                        {selectedItems.length}
-                    </Text>
-                ),
-            });
-        } else {
-            navigation.setOptions({
-                headerRight: () => { },
-            },
-            );
-        }
+        navigation.setOptions({
+            headerRight: () => (
+                selectedItems.length > 0 && <Text style={styles.itemCount}>{selectedItems.length}</Text>
+            ),
+        });
     }, [selectedItems]);
 
-    function handleName(user) {
+    const handleName = (user) => {
         if (user.data().name) {
-            if (user.data().email == auth?.currentUser?.email) {
-                return user.data().name + ('*(You)');
-            }
-            return user.data().name;
-        } else if (user.data().email) {
-
-            return user.data().email;
-        } else {
-            return '~ No Name or Email ~';
+            return user.data().email === auth?.currentUser?.email ? `${user.data().name}*(You)` : user.data().name;
         }
+        return user.data().email ? user.data().email : '~ No Name or Email ~';
     }
 
-    function handleSubtitle(user) {
-        if (user.data().email == auth?.currentUser?.email) {
-            return 'Message yourself';
-        } else {
-            return 'User status';
-        }
+    const handleSubtitle = (user) => {
+        return user.data().email === auth?.currentUser?.email ? 'Message yourself' : 'User status';
     }
 
     const handleOnPress = (user) => {
@@ -66,71 +48,64 @@ const Group = () => {
     }
 
     const selectItems = (user) => {
-        if (selectedItems.includes(user.id)) {
-            const newListItems = selectedItems.filter(
-                listItem => listItem !== user.id,
-            );
-            return setSelectedItems([...newListItems]);
-        }
-        setSelectedItems([...selectedItems, user.id]);
-
-        if (selectedUsers.includes(user.id)) {
-            const newListItems = selectedItems.filter(
-                listItem => listItem !== user.id,
-            );
-            return setSelectedItems([...newListItems]);
-        }
-        setSelectedUsers([...selectedUsers, user]);
+        setSelectedItems((prevItems) => {
+            if (prevItems.includes(user.id)) {
+                return prevItems.filter(item => item !== user.id);
+            }
+            return [...prevItems, user.id];
+        });
     }
 
-    const getSelected = (user) => {
-        return selectedItems.includes(user.id);
-    }
+    const getSelected = (user) => selectedItems.includes(user.id);
 
     const deSelectItems = () => {
         setSelectedItems([]);
-        setSelectedUsers([]);
     };
 
     const handleFabPress = () => {
-        let users = [];
-        //Add admin first to group
-        users.push({ email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false });
-        selectedUsers.map(user => {
-            //Add other users
-            users.push({ email: user.data().email, name: user.data().name, deletedFromChat: false });
-        })
-        //Creates new Group chat
-        const groupName = 'GROUP ' + Math.floor(Math.random() * 10) + '🌍';
+        setModalVisible(true);
+    }
+
+    const handleCreateGroup = () => {
+        if (!groupName.trim()) {
+            alert('Group name cannot be empty');
+            return;
+        }
+
+        const usersToAdd = users
+            .filter(user => selectedItems.includes(user.id))
+            .map(user => ({ email: user.data().email, name: user.data().name, deletedFromChat: false }));
+
+        usersToAdd.unshift({ email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false });
+
         const newRef = doc(collection(database, "chats"));
         setDoc(newRef, {
             lastUpdated: Date.now(),
-            users: users,
+            users: usersToAdd,
             messages: [],
-            groupName: groupName, //TODO admin can set group name
-            groupAdmins: [auth?.currentUser?.email] //TODO can change group admins later
-        }).then(
-            navigation.navigate('Chat', { id: newRef.id, chatName: groupName })
-        );
-        deSelectItems();
+            groupName: groupName,
+            groupAdmins: [auth?.currentUser?.email]
+        }).then(() => {
+            navigation.navigate('Chat', { id: newRef.id, chatName: groupName });
+            deSelectItems();
+            setModalVisible(false);
+            setGroupName("");
+        });
     }
 
     return (
         <Pressable style={styles.container} onPress={deSelectItems}>
             {users.length === 0 ? (
-                <View style={styles.blankContainer} >
-                    <Text style={styles.textContainer}>
-                        No registered users yet
-                    </Text>
+                <View style={styles.blankContainer}>
+                    <Text style={styles.textContainer}>No registered users yet</Text>
                 </View>
             ) : (
                 <ScrollView>
-                    {users.map(user =>
-                    (
-                        user.data().email != auth?.currentUser?.email &&
-
+                    {users.map(user => (
+                        user.data().email !== auth?.currentUser?.email &&
                         <React.Fragment key={user.id}>
-                            <ContactRow style={getSelected(user) ? styles.selectedContactRow : ""}
+                            <ContactRow
+                                style={getSelected(user) ? styles.selectedContactRow : ""}
                                 name={handleName(user)}
                                 subtitle={handleSubtitle(user)}
                                 onPress={() => handleOnPress(user)}
@@ -141,15 +116,32 @@ const Group = () => {
                     ))}
                 </ScrollView>
             )}
-
-            {selectedItems.length > 0 &&
+            {selectedItems.length > 0 && (
                 <TouchableOpacity style={styles.fab} onPress={handleFabPress}>
                     <View style={styles.fabContainer}>
                         <Ionicons name="arrow-forward-outline" size={24} color={'white'} />
                     </View>
                 </TouchableOpacity>
-            }
-
+            )}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => {
+                    setModalVisible(!modalVisible);
+                }}
+            >
+                <View style={styles.modalView}>
+                    <Text style={styles.modalText}>Enter Group Name</Text>
+                    <TextInput
+                        style={styles.input}
+                        onChangeText={setGroupName}
+                        value={groupName}
+                        placeholder="Group Name"
+                        onSubmitEditing={handleCreateGroup} // Create group on submit
+                    />
+                </View>
+            </Modal>
         </Pressable>
     )
 }
@@ -179,18 +171,37 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    contactRow: {
-        backgroundColor: 'white',
-        marginTop: 16,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border
+    selectedContactRow: {
+        backgroundColor: '#E0E0E0'
     },
     itemCount: {
         right: 10,
         color: colors.teal,
         fontSize: 18,
         fontWeight: "400",
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: "white",
+        borderRadius: 20,
+        padding: 35,
+        alignItems: "center",
+        elevation: 5
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: "center",
+        fontSize: 20,
+        fontWeight: "bold"
+    },
+    input: {
+        height: 40,
+        borderColor: 'gray',
+        borderWidth: 1,
+        marginBottom: 15,
+        width: '100%',
+        paddingHorizontal: 10
     }
-})
+});
 
 export default Group;

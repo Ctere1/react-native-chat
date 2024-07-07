@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { SafeAreaView, StyleSheet, View, Text, ScrollView } from "react-native";
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import ContactRow from '../components/ContactRow';
 import Separator from "../components/Separator";
 import { auth, database } from '../config/firebase';
@@ -16,121 +16,97 @@ const Users = () => {
     useEffect(() => {
         const collectionUserRef = collection(database, 'users');
         const q = query(collectionUserRef, orderBy("name", "asc"));
-        onSnapshot(q, (doc) => {
-            setUsers(doc.docs);
+        const unsubscribeUsers = onSnapshot(q, (snapshot) => {
+            setUsers(snapshot.docs);
         });
 
-        //Get existing chats to avoid creating duplicate chats
-        //Do not include group chats to avoid conflict chats --> where('groupName', "==", '')
+        // Get existing chats to avoid creating duplicate chats
         const collectionChatsRef = collection(database, 'chats');
-        const q2 = query(collectionChatsRef,
+        const q2 = query(
+            collectionChatsRef,
             where('users', "array-contains", { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false }),
-            where('groupName', "==", ''),
+            where('groupName', "==", '')
         );
-        onSnapshot(q2, (doc) => {
-            doc.docs.map(existingChat => {
-                if (!existingChats.find(e => e.chatId === existingChat.id)) {
-                    existingChats.push({ chatId: existingChat.id, userEmails: existingChat.data().users })
-                }
-            });
-            setExistingChats(existingChats);
+        const unsubscribeChats = onSnapshot(q2, (snapshot) => {
+            const existing = snapshot.docs.map(existingChat => ({
+                chatId: existingChat.id,
+                userEmails: existingChat.data().users
+            }));
+            setExistingChats(existing);
         });
 
+        return () => {
+            unsubscribeUsers();
+            unsubscribeChats();
+        };
     }, []);
 
-    const handleNewGroup = () => {
+    const handleNewGroup = useCallback(() => {
         navigation.navigate('Group');
-    }
+    }, [navigation]);
 
-    const handleNewUser = () => {
+    const handleNewUser = useCallback(() => {
         alert('New user');
-    }
+    }, []);
 
-    const handleNavigate = (user) => {
+    const handleNavigate = useCallback((user) => {
         let navigationChatID = '';
         let messageYourselfChatID = '';
 
-        existingChats.map(existingChat => {
-            // console.log('--------------------------');
-            // console.log(existingChat, user.data().email);
-            let isCurrentUserInTheChat = false;
-            let isMessageYourselfExists = 0;
-            existingChat.userEmails.map((e) => {
-                if (e.email == auth?.currentUser?.email) {
-                    isCurrentUserInTheChat = true;
-                }
+        existingChats.forEach(existingChat => {
+            const isCurrentUserInTheChat = existingChat.userEmails.some(e => e.email === auth?.currentUser?.email);
+            const isMessageYourselfExists = existingChat.userEmails.filter(e => e.email === user.data().email).length;
 
-                //Check is 'message yourself' chat exists
-                if (e.email == user.data().email) {
-                    isMessageYourselfExists++;
-                }
-            });
+            if (isCurrentUserInTheChat && existingChat.userEmails.some(e => e.email === user.data().email)) {
+                navigationChatID = existingChat.chatId;
+            }
 
-            //This check is not look for 'message yourself' chat !.
-            //It only checks chats between different users.
-            existingChat.userEmails.map((e) => {
-                if (isCurrentUserInTheChat && e.email == user.data().email) {
-                    navigationChatID = existingChat.chatId;
-                }
-            });
-
-            //Need to seperate 'message yourself' chat id from other chats.
-            //It checks existing 'message yourself' chat.
-            if (isMessageYourselfExists == 2) {
+            if (isMessageYourselfExists === 2) {
                 messageYourselfChatID = existingChat.chatId;
             }
-            //Creates new 'message yourself' chat.
-            if (auth?.currentUser?.email == user.data().email) {
+
+            if (auth?.currentUser?.email === user.data().email) {
                 navigationChatID = '';
             }
         });
 
-        if (messageYourselfChatID != '') {
+        if (messageYourselfChatID) {
             navigation.navigate('Chat', { id: messageYourselfChatID, chatName: handleName(user) });
-        } else if (navigationChatID != '') {
+        } else if (navigationChatID) {
             navigation.navigate('Chat', { id: navigationChatID, chatName: handleName(user) });
         } else {
-            //Creates new chat
+            // Creates new chat
             const newRef = doc(collection(database, "chats"));
             setDoc(newRef, {
                 lastUpdated: Date.now(),
-                groupName: '', //It is not a group chat
+                groupName: '', // It is not a group chat
                 users: [
                     { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false },
                     { email: user.data().email, name: user.data().name, deletedFromChat: false }
                 ],
                 lastAccess: [
-                    { email: auth?.currentUser?.email, date: Date.now(), },
-                    { email: user.data().email, date: '', }],
+                    { email: auth?.currentUser?.email, date: Date.now() },
+                    { email: user.data().email, date: '' }
+                ],
                 messages: []
-            }).then(
-                navigation.navigate('Chat', { id: newRef.id, chatName: handleName(user) })
-            );
+            }).then(() => {
+                navigation.navigate('Chat', { id: newRef.id, chatName: handleName(user) });
+            });
         }
+    }, [existingChats, navigation]);
 
-    }
+    const handleSubtitle = useCallback((user) => {
+        return user.data().email === auth?.currentUser?.email ? 'Message yourself' : 'User status';
+    }, []);
 
-    function handleSubtitle(user) {
-        if (user.data().email == auth?.currentUser?.email) {
-            return 'Message yourself';
-        } else {
-            return 'User status';
+    const handleName = useCallback((user) => {
+        const name = user.data().name;
+        const email = user.data().email;
+        if (name) {
+            return email === auth?.currentUser?.email ? `${name}*(You)` : name;
         }
-    }
-
-    function handleName(user) {
-        if (user.data().name) {
-            if (user.data().email == auth?.currentUser?.email) {
-                return user.data().name + ('*(You)');
-            }
-            return user.data().name;
-        } else if (user.data().email) {
-
-            return user.data().email;
-        } else {
-            return '~ No Name or Email ~';
-        }
-    }
+        return email ? email : '~ No Name or Email ~';
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -150,7 +126,7 @@ const Users = () => {
             />
 
             {users.length === 0 ? (
-                <View style={styles.blankContainer} >
+                <View style={styles.blankContainer}>
                     <Text style={styles.textContainer}>
                         No registered users yet
                     </Text>
@@ -192,5 +168,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "300",
     }
-})
+});
+
 export default Users;
