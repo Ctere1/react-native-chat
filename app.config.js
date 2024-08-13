@@ -23,7 +23,8 @@ export default {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.ctere1.reactnativechat"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,7 +36,10 @@ export default {
       "storageBucket": process.env.STORAGE_BUCKET,
       "messagingSenderId": process.env.MESSAGING_SENDER_ID,
       "appId": process.env.APP_ID,
-      "measurementId": process.env.MEASUREMENT_ID
+      "measurementId": process.env.MEASUREMENT_ID,
+      "eas": {
+        "projectId": process.env.EAS_PROJECT_ID
+      }
     }
   }
 }
