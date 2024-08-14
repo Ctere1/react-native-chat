@@ -12,6 +12,7 @@
   <a href="#ℹ%EF%B8%8F-introduction">Introduction</a> •
   <a href="#features">Features</a> •
   <a href="#installation-guide">Installation Guide</a> •
+  <a href="#building-guide">Building Guide</a> •
   <a href="#screenshots">Screenshots</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a> •
@@ -77,6 +78,24 @@ https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8
  > [!Warning]  
    Do not forget to setup `.env` file for Firebase connection. Please see the [doc](https://firebase.google.com/docs/firestore/quickstart)
 
+
+## 🏗️Building Guide
+ 
+To build this application, follow these steps:
+
+- Before you can build the application, you need to configure your environment variables. Ensure you have a `.env` file with the necessary Firebase configuration. Push the `.env` file to the EAS environment using the following command:
+
+```bash
+eas secret:push --scope project --env-file .env
+```
+
+- With the environment variables set and dependencies installed, you can build the APK for Android. Use the following command:
+
+```bash
+eas build -p android --profile preview
+```
+
+This command will start the build process using the preview profile (see [eas.json](/eas.json)). The build process will package your application into an APK file that you can install on an Android device.
 
 ## 🪟Screenshots
 
