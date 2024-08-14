@@ -35,7 +35,7 @@ It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime databa
 
 Demo |
 :--: |
-<video src='./ReactNativeChat-Live-Demo.mp4' width=180/>
+<video src='https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8716-bf274c059d2e' width=180/>
 
 
 >[!Note] 
