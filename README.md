@@ -75,6 +75,8 @@ https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8
  $ npx expo start
  ```
  
+ After these steps install the [Expo Go](https://expo.dev/go) mobile app from the Google Play Store or Apple App Store on your testing device. This app allows you to run and test React Native applications built with Expo.
+ 
  > [!Warning]  
    Do not forget to setup `.env` file for Firebase connection. Please see the [doc](https://firebase.google.com/docs/firestore/quickstart)
 
@@ -98,13 +100,13 @@ To build this application, follow these steps:
 This command will start the build process using the preview profile (see [eas.json](/eas.json)). The build process will package your application into an APK file that you can install on an Android device.
 
 >[!Note] 
-  Environment variables defined in a .env file are only considered by the Expo CLI. Therefore, if you upload a .env file to EAS Build, it can be used to inline EXPO_PUBLIC_ variables into your application code.
+  Environment variables defined in a `.env` file are only considered by the Expo CLI. Therefore, if you upload a `.env` file to EAS Build, it can be used to inline `EXPO_PUBLIC_` variables into your application code.
 
 >[!Note]
-  However, the recommended practice is to use .env files in your local environment, while defining environment variables for EAS Build in eas.json. Environment variables defined in your eas.json build profile will be used when evaluating your app.config.js when running   eas build and will be available to all steps of the build process on the EAS Build server.      
+  However, the recommended practice is to use `.env` files in your local environment, while defining environment variables for EAS Build in `eas.json`. Environment variables defined in your `eas.json` build profile will be used when evaluating your `app.config.js` when running eas build and will be available to all steps of the build process on the EAS Build server.      
 
 >[!Note]
-  This may result in some duplication of variables between .env files and eas.json build profiles, but makes it easier to see what variables will be applied across all environments.
+  This may result in some duplication of variables between `.env` files and eas.json build profiles, but makes it easier to see what variables will be applied across all environments.
 
 ## 🪟Screenshots
 
