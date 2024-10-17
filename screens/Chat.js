@@ -3,8 +3,8 @@ import { View, StyleSheet, TouchableOpacity, Keyboard, Text, ActivityIndicator }
 import { Ionicons } from '@expo/vector-icons'
 import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat'
 import { auth, database } from '../config/firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { colors } from '../config/constants';
 import EmojiModal from 'react-native-emoji-modal';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +15,7 @@ function Chat({ route }) {
     const navigation = useNavigation();
     const [messages, setMessages] = useState([]);
     const [modal, setModal] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onSnapshot(doc(database, 'chats', route.params.id), (doc) => {
@@ -28,10 +29,24 @@ function Chat({ route }) {
         return () => unsubscribe();
     }, [route.params.id]);
 
-    const onSend = useCallback((m = []) => {
-        const messagesWillSend = [{ ...m[0], sent: true, received: false }];
-        setDoc(doc(database, 'chats', route.params.id), {
-            messages: GiftedChat.append(messages, messagesWillSend),
+    const onSend = useCallback( async (m = []) => {
+       // Get messages
+      const chatDocRef = doc(database, "chats", route.params.id);
+      const chatDocSnap = await getDoc(chatDocRef);
+
+      const chatData = chatDocSnap.data();
+      const data = chatData.messages.map((message) => ({
+        ...message,
+        createdAt: message.createdAt.toDate(),
+        image: message.image ?? "",
+      }));
+
+      // Attach new message
+      const messagesWillSend = [{ ...m[0], sent: true, received: false }];
+      let chatMessages = GiftedChat.append(data, messagesWillSend);
+
+      setDoc(doc(database, 'chats', route.params.id), {
+            messages: chatMessages,
             lastUpdated: Date.now()
         }, { merge: true });
     }, [route.params.id, messages]);
@@ -49,31 +64,50 @@ function Chat({ route }) {
     };
 
     const uploadImageAsync = async (uri) => {
-        const blob = await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.onload = () => resolve(xhr.response);
-            xhr.onerror = () => reject(new TypeError("Network request failed"));
-            xhr.responseType = "blob";
-            xhr.open("GET", uri, true);
-            xhr.send(null);
-        });
-        const randomString = uuid.v4();
-        const fileRef = ref(getStorage(), randomString);
-        await uploadBytes(fileRef, blob);
-        blob.close();
+      setUploading(true);
+      const blob = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => resolve(xhr.response);
+        xhr.onerror = () => reject(new TypeError("Network request failed"));
+        xhr.responseType = "blob";
+        xhr.open("GET", uri, true);
+        xhr.send(null);
+      });
+      const randomString = uuid.v4();
+      const fileRef = ref(getStorage(), randomString);
 
-        const uploadedFileString = await getDownloadURL(fileRef);
-        onSend([{
-            _id: randomString,
-            createdAt: new Date(),
-            text: '',
-            image: uploadedFileString,
-            user: {
+      const uploadTask = uploadBytesResumable(fileRef, blob);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          print("Upload percent:", progress);
+        },
+        (error) => {
+          // Handle unsuccessful uploads
+          console.log(error);
+          reject(error);
+        },
+        async () => {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          setUploading(false);
+          onSend([
+            {
+              _id: randomString,
+              createdAt: new Date(),
+              text: "",
+              image: downloadUrl,
+              user: {
                 _id: auth?.currentUser?.email,
                 name: auth?.currentUser?.displayName,
-                avatar: 'https://i.pravatar.cc/300'
-            }
-        }]);
+                avatar: "https://i.pravatar.cc/300",
+              },
+            },
+          ]);
+        }
+      );
     };
 
     const renderBubble = useMemo(() => (props) => (
@@ -140,8 +174,15 @@ function Chat({ route }) {
         </View>
     ), []);
 
+    const renderLoadingUpload = useMemo(() => () => (
+        <View style={styles.loadingContainerUpload}>
+            <ActivityIndicator size='large' color={colors.teal} />
+        </View>
+    ), []);
+
     return (
         <>
+            {uploading && renderLoadingUpload()}
             <GiftedChat
                 messages={messages}
                 showAvatarForEveryMessage={false}
@@ -234,6 +275,17 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    loadingContainerUpload: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(0, 0, 0, 0.5)", 
+      zIndex: 999, 
     }
 });
 
