@@ -44,7 +44,7 @@ const ChatInfo = ({ route }) => {
 
     const renderUser = ({ item }) => (
         <View style={styles.userContainer}>
-            <Ionicons name="person-outline" size={30} color="black" />
+            <Ionicons name="person-outline" size={30} color={colors.primary} />
             <View style={styles.userInfo}>
                 <Text style={styles.userName}>{item.name}</Text>
                 <Text style={styles.userEmail}>{item.email}</Text>
@@ -66,7 +66,7 @@ const ChatInfo = ({ route }) => {
             <View style={styles.chatHeader}>
                 {groupName ? (
                     <>
-                        <Text style={styles.groupLabel}>Group🔹</Text>
+                        <Text style={styles.groupLabel}>Group</Text>
                         <Text style={styles.chatTitle}>{chatName}</Text>
                     </>
                 ) : (
@@ -77,10 +77,9 @@ const ChatInfo = ({ route }) => {
             <Cell
                 title="About"
                 subtitle="Available"
-                icon="information-outline"
-                iconColor="black"
-                secondIcon=""
-                style={{ marginBottom: 5 }}
+                icon="information-circle-outline"
+                iconColor={colors.primary}
+                style={styles.cell}
             />
 
             <Text style={styles.usersTitle}>Members</Text>
@@ -97,74 +96,83 @@ const ChatInfo = ({ route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    subtitle: {
-        marginTop: 2,
-        color: '#565656',
+        backgroundColor: '#f9f9f9',
     },
     avatar: {
-        width: 168,
-        height: 168,
-        borderRadius: 84,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
         alignItems: 'center',
         justifyContent: 'center',
         alignSelf: 'center',
         backgroundColor: colors.primary,
+        marginTop: 20,
+        marginBottom: 10,
     },
     avatarLabel: {
-        fontSize: 20,
+        fontSize: 36,
         color: 'white',
+        fontWeight: 'bold',
     },
     chatHeader: {
-        flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
+        marginBottom: 20,
     },
     groupLabel: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '500',
-        color: '#555',
-        marginRight: 8,
-    },
-    usersTitle: {
-        padding: 16,
-        marginTop: 12,
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#555',
+        color: colors.primary,
+        marginBottom: 4,
     },
     chatTitle: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#333',
+        textAlign: 'center',
+    },
+    cell: {
+        marginHorizontal: 16,
+        marginBottom: 15,
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 0.5,
+    },
+    usersTitle: {
+        marginHorizontal: 16,
         fontSize: 18,
-        fontWeight: '500',
-        alignSelf: 'center',
-        color: '#555',
+        fontWeight: 'bold',
+        color: '#333',
+        marginTop: 20,
+        marginBottom: 10,
     },
     userContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        backgroundColor: 'white',
         borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-    },
-    userText: {
-        marginLeft: 10,
-        fontSize: 16,
-        color: '#000',
-    },
-    usersList: {
-        marginTop: 10,
+        borderBottomColor: '#eee',
     },
     userInfo: {
-        marginLeft: 10,
+        marginLeft: 12,
     },
     userName: {
         fontSize: 16,
         fontWeight: '500',
-        color: '#000',
+        color: '#333',
     },
     userEmail: {
         fontSize: 14,
-        color: '#555',
+        color: '#666',
+    },
+    usersList: {
+        paddingBottom: 20,
     },
 });
 

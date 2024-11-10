@@ -1,7 +1,7 @@
 import React, { useState, createContext, useContext, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { View, ActivityIndicator, AppRegistry } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from '@expo/vector-icons';
 import Chats from './screens/Chats';
@@ -23,42 +23,36 @@ import ChatHeader from "./components/ChatHeader";
 import ChatMenu from "./components/ChatMenu";
 import { MenuProvider } from "react-native-popup-menu";
 
+import { AuthenticatedUserProvider, AuthenticatedUserContext } from "./contexts/AuthenticatedUserContext";
+import { UnreadMessagesProvider, UnreadMessagesContext } from "./contexts/UnreadMessagesContext";
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-const AuthenticatedUserContext = createContext({});
 
-const AuthenticatedUserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+const TabNavigator = () => {
+  const { unreadCount, setUnreadCount } = useContext(UnreadMessagesContext);
+
   return (
-    <AuthenticatedUserContext.Provider value={{ user, setUser }}>
-      {children}
-    </AuthenticatedUserContext.Provider>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName = route.name === 'Chats' ? 'chatbubbles' : 'settings';
+          iconName += focused ? '' : '-outline';
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: 'gray',
+        headerShown: true,
+        presentation: 'modal',
+      })}
+    >
+      <Tab.Screen name="Chats" options={{ tabBarBadge: unreadCount > 0 ? unreadCount : null }}>
+        {() => <Chats setUnreadCount={setUnreadCount} />}
+      </Tab.Screen>
+      <Tab.Screen name="Settings" component={Settings} />
+    </Tab.Navigator>
   );
 };
-
-const TabNavigator = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      tabBarIcon: ({ focused, color, size }) => {
-        let iconName;
-
-        if (route.name === 'Chats') {
-          iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-        } else if (route.name === 'Settings') {
-          iconName = focused ? 'settings' : 'settings-outline';
-        }
-        return <Ionicons name={iconName} size={size} color={color} />;
-      },
-      tabBarActiveTintColor: colors.primary,
-      tabBarInactiveTintColor: 'gray',
-      headerShown: true,
-      presentation: 'modal',
-    })}
-  >
-    <Tab.Screen name="Chats" component={Chats} />
-    <Tab.Screen name="Settings" component={Settings} />
-  </Tab.Navigator>
-);
 
 const MainStack = () => (
   <Stack.Navigator>
@@ -67,17 +61,10 @@ const MainStack = () => (
       name="Chat"
       component={Chat}
       options={({ route }) => ({
-        headerTitle: () =>
-          <ChatHeader
-            chatName={route.params.chatName}
-            chatId={route.params.id}
-          />,
+        headerTitle: () => <ChatHeader chatName={route.params.chatName} chatId={route.params.id} />,
         headerRight: () => (
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <ChatMenu
-              chatName={route.params.chatName}
-              chatId={route.params.id}
-            />
+            <ChatMenu chatName={route.params.chatName} chatId={route.params.id} />
           </View>
         ),
       })}
@@ -131,7 +118,9 @@ const App = () => {
   return (
     <MenuProvider>
       <AuthenticatedUserProvider>
-        <RootNavigator />
+        <UnreadMessagesProvider>
+          <RootNavigator />
+        </UnreadMessagesProvider>
       </AuthenticatedUserProvider>
     </MenuProvider>
   );

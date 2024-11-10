@@ -1,32 +1,73 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { SafeAreaView, StyleSheet, View, TouchableOpacity, Text, ScrollView, Pressable, Alert, ActivityIndicator } from "react-native";
+import React, { useState, useEffect } from "react";
+import { SafeAreaView, StyleSheet, ScrollView, Pressable, Alert, ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
 import ContactRow from '../components/ContactRow';
 import Separator from "../components/Separator";
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { auth, database } from '../config/firebase';
 import { collection, doc, where, query, onSnapshot, orderBy, setDoc, deleteDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from "../config/constants";
 
-const Chats = () => {
+const Chats = ({ setUnreadCount }) => {
     const navigation = useNavigation();
     const [chats, setChats] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedItems, setSelectedItems] = useState([]);
+    const [newMessages, setNewMessages] = useState({});
 
-    useEffect(() => {
-        const collectionRef = collection(database, 'chats');
-        const q = query(collectionRef, where('users', "array-contains", { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false }), orderBy("lastUpdated", "desc"));
+    useFocusEffect(
+        React.useCallback(() => {
+            // Load unread messages from AsyncStorage when screen is focused
+            const loadNewMessages = async () => {
+                try {
+                    const storedMessages = await AsyncStorage.getItem('newMessages');
+                    const parsedMessages = storedMessages ? JSON.parse(storedMessages) : {};
+                    setNewMessages(parsedMessages);
+                    setUnreadCount(Object.values(parsedMessages).reduce((total, num) => total + num, 0));
+                } catch (error) {
+                    console.log('Error loading new messages from storage', error);
+                }
+            };
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setChats(snapshot.docs);
-            setLoading(false);
-        });
+            // Set up Firestore listener for chat updates
+            const collectionRef = collection(database, 'chats');
+            const q = query(
+                collectionRef,
+                where('users', "array-contains", { email: auth?.currentUser?.email, name: auth?.currentUser?.displayName, deletedFromChat: false }),
+                orderBy("lastUpdated", "desc")
+            );
 
-        updateNavigationOptions();
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                setChats(snapshot.docs);
+                setLoading(false);
 
-        return () => unsubscribe();
-    }, []);
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "modified") {
+                        const chatId = change.doc.id;
+                        const messages = change.doc.data().messages;
+                        const firstMessage = messages[0];
+
+                        // Increase unread count if the first message is from someone else
+                        if (firstMessage.user._id !== auth?.currentUser?.email) {
+                            setNewMessages(prev => {
+                                const updatedMessages = { ...prev, [chatId]: (prev[chatId] || 0) + 1 };
+                                AsyncStorage.setItem('newMessages', JSON.stringify(updatedMessages));
+                                setUnreadCount(Object.values(updatedMessages).reduce((total, num) => total + num, 0));
+                                return updatedMessages;
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Load unread messages and start listener when screen is focused
+            loadNewMessages();
+
+            // Clean up listener on focus change
+            return () => unsubscribe();
+        }, [])
+    );
 
     useEffect(() => {
         updateNavigationOptions();
@@ -61,34 +102,28 @@ const Chats = () => {
         }
 
         if (currentUser?.displayName) {
-            if (currentUser.displayName === users[0].name) {
-                if (currentUser.displayName === users[1].name) {
-                    return `${currentUser.displayName} *(You)`;
-                }
-                return users[1].name;
-            } else {
-                return users[0].name;
-            }
+            return users[0].name === currentUser.displayName ? users[1].name : users[0].name;
         }
 
         if (currentUser?.email) {
-            if (currentUser.email === users[0].email) {
-                if (currentUser.email === users[1].email) {
-                    return `${currentUser.email} *(You)`;
-                }
-                return users[1].email;
-            } else {
-                return users[0].email;
-            }
+            return users[0].email === currentUser.email ? users[1].email : users[0].email;
         }
 
         return '~ No Name or Email ~';
     };
 
-    const handleOnPress = (chat) => {
+    const handleOnPress = async (chat) => {
+        const chatId = chat.id;
         if (selectedItems.length) {
             return selectItems(chat);
         }
+        // Reset unread count for the selected chat
+        setNewMessages(prev => {
+            const updatedMessages = { ...prev, [chatId]: 0 };
+            AsyncStorage.setItem('newMessages', JSON.stringify(updatedMessages));
+            setUnreadCount(Object.values(updatedMessages).reduce((total, num) => total + num, 0));
+            return updatedMessages;
+        });
         navigation.navigate('Chat', { id: chat.id, chatName: handleChatName(chat) });
     };
 
@@ -126,9 +161,9 @@ const Chats = () => {
                     onPress: () => {
                         selectedItems.forEach(chatId => {
                             const chat = chats.find(chat => chat.id === chatId);
-                            const updatedUsers = chat.data().users.map(user => 
-                                user.email === auth?.currentUser?.email 
-                                    ? { ...user, deletedFromChat: true } 
+                            const updatedUsers = chat.data().users.map(user =>
+                                user.email === auth?.currentUser?.email
+                                    ? { ...user, deletedFromChat: true }
                                     : user
                             );
 
@@ -186,6 +221,7 @@ const Chats = () => {
                                     onLongPress={() => handleLongPress(chat)}
                                     selected={getSelected(chat)}
                                     showForwardIcon={false}
+                                    newMessageCount={newMessages[chat.id] || 0}
                                 />
                             </React.Fragment>
                         ))
@@ -250,6 +286,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         color: colors.teal
+    },
+    newMessageBadge: {
+        backgroundColor: colors.teal,
+        color: 'white',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 12,
+        fontSize: 12,
+        marginLeft: 8
     }
 });
 
