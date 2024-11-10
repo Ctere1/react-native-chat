@@ -42,17 +42,17 @@ https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8
  
 ## ⚡Features
  
- | Feature                    | Description                                                                                            |    
- | :------------------------  | :--------------------------------------------------------------------------------------------------    |
- | `Signup and Login`         |   Firebase Email/Password sign-in method. Allow users to sign up using their email address and password|
- | `Send Text Message`        |   Essential for casual messaging                                                                       |
- | `Send Picture`             |   You can send pictures without losing quality                                                         |
- | `Group Chat`               |   You can send your messages to multiple people at the same time                                       |
- | `Delete Chat`              |   You can delete chats after holding and selecting them                                                |
- | `Delete Account`           |   You can delete your account                                                                          |
- | `Real Time Chat`           |   The last incoming message will be placed at the top of the chat screen                               |
- | `Users List`               |   Registered users sorted by alphabetical index (A -> Z)                                               |
- | `Note to Self`             |   You can also take notes by sending a message to yourself                                             |
+| Feature             | Description                                                                                           |
+| :------------------ | :---------------------------------------------------------------------------------------------------- |
+| `Signup and Login`  | Firebase Email/Password sign-in method. Allow users to sign up using their email address and password |
+| `Send Text Message` | Essential for casual messaging                                                                        |
+| `Send Picture`      | You can send pictures without losing quality                                                          |
+| `Group Chat`        | You can send your messages to multiple people at the same time                                        |
+| `Delete Chat`       | You can delete chats after holding and selecting them                                                 |
+| `Delete Account`    | You can delete your account                                                                           |
+| `Real Time Chat`    | The last incoming message will be placed at the top of the chat screen                                |
+| `Users List`        | Registered users sorted by alphabetical index (A -> Z)                                                |
+| `Note to Self`      | You can also take notes by sending a message to yourself                                              |
 
 ## 💾Installation Guide
  
@@ -111,28 +111,33 @@ This command will start the build process using the preview profile (see [eas.js
 ## 🪟Screenshots
 
 ### **Login-Signup Pages**
-| User can login      |  User can signup    |  
-| :-----------------: | :-----------------: |
+|                   Login                   |                  Signup                   |
+| :---------------------------------------: | :---------------------------------------: |
 | <img src="./images/ss1.jpg"  width="250"> | <img src="./images/ss2.jpg"  width="250"> |
 
 
 ### **Chats Page**
-| User can access chats   |  User can see all users   |  User can create new group chat      |  User can delete chats     | 
-| :--------------------:  | :-----------------------: | :----------------------------------: | :------------------------: |
+|                   Chats                   |                   Users                   |                Group chat                 |               Delete chats                |
+| :---------------------------------------: | :---------------------------------------: | :---------------------------------------: | :---------------------------------------: |
 | <img src="./images/ss3.jpg"  width="250"> | <img src="./images/ss4.jpg"  width="250"> | <img src="./images/ss5.jpg"  width="250"> | <img src="./images/ss7.jpg"  width="250"> |
 
 
 ### **Settings Page**
-| User can access settings |  User can see the profile section |  User can see the help section  | User can see the account section  | 
-| :----------------------: | :-------------------------------: | :-----------------------------: | :-------------------------------: |
-| <img src="./images/ss8.jpg"  width="250"> | <img src="./images/ss9.jpg"  width="250"> | <img src="./images/ss10.jpg"  width="250">| <img src="./images/ss11.jpg"  width="250"> |
+|                 Settings                  |                  Profile                  |                    Help                    |                  Account                   |
+| :---------------------------------------: | :---------------------------------------: | :----------------------------------------: | :----------------------------------------: |
+| <img src="./images/ss8.jpg"  width="250"> | <img src="./images/ss9.jpg"  width="250"> | <img src="./images/ss10.jpg"  width="250"> | <img src="./images/ss11.jpg"  width="250"> |
 
 
 ### **Chat Page**
-| Emoji Panel        | Note to Self       | Main Chat Screen   | Chat Information Screen |          
-| :----------------: | :----------------: | :----------------: | :---------------------: |
-| <img src="./images/ss12.jpg"  width="250"> | <img src="./images/ss13.jpg"  width="250"> | <img src="./images/ss14.jpg"  width="250"> | <img src="./images/ss15.jpg"  width="250"> | 
+|                Emoji Panel                 |                Note to Self                |              Main Chat Screen              |          Chat Information Screen           |
+| :----------------------------------------: | :----------------------------------------: | :----------------------------------------: | :----------------------------------------: |
+| <img src="./images/ss12.jpg"  width="250"> | <img src="./images/ss13.jpg"  width="250"> | <img src="./images/ss14.jpg"  width="250"> | <img src="./images/ss15.jpg"  width="250"> |
 
+
+###  **Others**
+| Message Indicator |
+| :---------------: |
+| <img src="./images/ss16.jpg"  width="250">|
 
 ## 📝Credits
 

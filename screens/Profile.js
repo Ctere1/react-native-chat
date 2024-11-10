@@ -1,115 +1,132 @@
 import React from "react";
-import { SafeAreaView, Text, TouchableOpacity, View, StyleSheet } from "react-native";
-import { Ionicons } from '@expo/vector-icons'
+import { SafeAreaView, Text, TouchableOpacity, View, StyleSheet, Alert } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from "../config/constants";
 import { auth } from '../config/firebase';
 import Cell from "../components/Cell";
-import { useNavigation } from "@react-navigation/native";
 
 const Profile = () => {
-    const navigation = useNavigation();
 
-    const changeName = () => {
-        alert('Change Name');
+    const handleChangeName = () => {
+        Alert.alert('Change Name', 'This feature is coming soon.');
     };
 
-    const displayEmail = () => {
-        alert('Display Email');
+    const handleDisplayEmail = () => {
+        Alert.alert('Display Email', `Your email is: ${auth?.currentUser?.email}`);
     };
 
-    const changePP = () => {
-        alert('Change PP');
+    const handleChangeProfilePicture = () => {
+        Alert.alert('Change Profile Picture', 'This feature is coming soon.');
     };
 
-    const showPP = () => {
-        alert('Show PP');
+    const handleShowProfilePicture = () => {
+        Alert.alert('Show Profile Picture', 'This feature is coming soon.');
     };
+
+    const initials = auth?.currentUser?.displayName
+        ? auth.currentUser.displayName.split(' ').map(name => name[0]).join('')
+        : auth?.currentUser?.email?.charAt(0).toUpperCase();
 
     return (
-        <SafeAreaView>
-            <TouchableOpacity style={styles.avatar} onPress={showPP}>
-                <View>
-                    <Text style={styles.avatarLabel}>
-                        {
-                            auth?.currentUser?.displayName != ''
-                                ?
-                                auth?.currentUser?.displayName.split(' ').reduce((prev, current) => `${prev}${current[0]}`, '')
-                                :
-                                auth?.currentUser?.email.split(' ').reduce((prev, current) => `${prev}${current[0]}`, '')
-                        }
-                    </Text>
-                </View>
-            </TouchableOpacity>
+        <SafeAreaView style={styles.container}>
+            {/* Profile Avatar */}
+            <View style={styles.avatarContainer}>
+                <TouchableOpacity style={styles.avatar} onPress={handleShowProfilePicture}>
+                    <Text style={styles.avatarLabel}>{initials}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.cameraIcon} onPress={handleChangeProfilePicture}>
+                    <Ionicons name="camera-outline" size={24} color="white" />
+                </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity style={styles.iconContainer} onPress={changePP}>
-                <Ionicons name="camera-outline" size={30} color='white' />
-            </TouchableOpacity>
+            {/* User Info Cells */}
+            <View style={styles.infoContainer}>
+                <Cell
+                    title='Name'
+                    icon='person-outline'
+                    iconColor="black"
+                    subtitle={auth?.currentUser?.displayName || "No name set"}
+                    secondIcon='pencil-outline'
+                    onPress={handleChangeName}
+                    style={styles.cell}
+                />
 
-            <Cell
-                title='Name'
-                icon='person-outline'
-                iconColor="black"
-                subtitle={auth?.currentUser?.displayName}
-                secondIcon='pencil-outline'
-                onPress={() => changeName()}
-                style={{ marginBottom: 5 }}
-            />
+                <Cell
+                    title='Email'
+                    subtitle={auth?.currentUser?.email}
+                    icon='mail-outline'
+                    iconColor="black"
+                    secondIcon='pencil-outline'
+                    onPress={handleDisplayEmail}
+                    style={styles.cell}
+                />
 
-            <Cell
-                title='Email'
-                subtitle={auth?.currentUser?.email}
-                icon='mail-outline'
-                iconColor="black"
-                secondIcon='pencil-outline'
-                style={{ marginBottom: 5 }}
-                onPress={() => displayEmail()}
-            />
-
-            <Cell
-                title='About'
-                subtitle={'Available'}
-                icon='information-outline'
-                iconColor="black"
-                secondIcon='pencil-outline'
-                style={{ marginBottom: 5 }}
-                onPress={() => navigation.navigate('About')}
-            />
-
+                <Cell
+                    title='About'
+                    subtitle='Available'
+                    icon='information-circle-outline'
+                    iconColor="black"
+                    secondIcon='pencil-outline'
+                    onPress={() => Alert.alert('About', 'This feature is coming soon.')}
+                    style={styles.cell}
+                />
+            </View>
         </SafeAreaView>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
-    subtitle: {
-        marginTop: 2,
-        color: '#565656'
+    container: {
+        flex: 1,
+        backgroundColor: '#f9f9f9',
+        alignItems: 'center',
+    },
+    avatarContainer: {
+        position: 'relative',
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 10,
     },
     avatar: {
-        marginTop: 12,
-        marginStart: 112,
-        width: 168,
-        height: 168,
-        borderRadius: 84,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.primary
+        backgroundColor: colors.primary,
     },
     avatarLabel: {
-        fontSize: 20,
-        color: 'white'
+        fontSize: 36,
+        color: 'white',
+        fontWeight: 'bold',
     },
-    iconContainer: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        alignContent: 'center',
-        justifyContent: 'center',
+    cameraIcon: {
+        position: 'absolute',
+        bottom: 4,
+        right: 4,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: colors.teal,
-        marginStart: 224,
-        bottom: 56,
-        paddingHorizontal: 14,
-        paddingVertical: 14,
-        marginBottom: -36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 5,
     },
-})
+    infoContainer: {
+        marginTop: 40,
+        width: '90%',
+    },
+    cell: {
+        marginBottom: 15,
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 0.5,
+    },
+});
+
 export default Profile;
