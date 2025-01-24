@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { SafeAreaView, StyleSheet, ScrollView, Pressable, Alert, ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { StyleSheet, ScrollView, Pressable, Alert, ActivityIndicator, Text, View, TouchableOpacity } from "react-native";
 import ContactRow from '../components/ContactRow';
 import Separator from "../components/Separator";
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -17,7 +17,7 @@ const Chats = ({ setUnreadCount }) => {
     const [newMessages, setNewMessages] = useState({});
 
     useFocusEffect(
-        React.useCallback(() => {
+        useCallback(() => {
             // Load unread messages from AsyncStorage when screen is focused
             const loadNewMessages = async () => {
                 try {

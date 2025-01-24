@@ -172,7 +172,14 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     usersList: {
-        paddingBottom: 20,
+        marginHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 0.5,
     },
 });
 

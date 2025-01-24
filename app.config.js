@@ -29,6 +29,7 @@ export default {
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "newArchEnabled": true,
     "extra": {
       "apiKey": process.env.EXPO_PUBLIC_API_KEY,
       "authDomain": process.env.EXPO_PUBLIC_AUTH_DOMAIN,
