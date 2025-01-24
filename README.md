@@ -32,7 +32,7 @@
 Real Time Chat Application that written in [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/) platform.
 It uses [Firebase](https://firebase.google.com/) (Web version 9) realtime database.  
 
-- For the live demo video see [Demo.mp4](https://github.com/Ctere1/react-native-chat/blob/master/ReactNativeChat-Live-Demo.mp4)        
+- For the live demo video see [Demo.mp4](./media/ReactNativeChat-Live-Demo.mp4)     
 
 https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8716-bf274c059d2e
 
@@ -99,45 +99,50 @@ To build this application, follow these steps:
 
 This command will start the build process using the preview profile (see [eas.json](/eas.json)). The build process will package your application into an APK file that you can install on an Android device.
 
->[!Note] 
-  Environment variables defined in a `.env` file are only considered by the Expo CLI. Therefore, if you upload a `.env` file to EAS Build, it can be used to inline `EXPO_PUBLIC_` variables into your application code.
+>[!Note]  
+  Environment variables defined in a `.env` file are only considered by the Expo CLI. Therefore, if you upload a `.env` file to EAS Build, it can be used to inline `EXPO_PUBLIC_` variables into your application code.However, the recommended practice is to use `.env` files in your local environment, while defining environment variables for EAS Build in `eas.json`. Environment variables defined in your `eas.json` build profile will be used when evaluating your `app.config.js` when running eas build and will be available to all steps of the build process on the EAS Build server. This may result in some duplication of variables between `.env` files and eas.json build profiles, but makes it easier to see what variables will be applied across all environments.
 
->[!Note]
-  However, the recommended practice is to use `.env` files in your local environment, while defining environment variables for EAS Build in `eas.json`. Environment variables defined in your `eas.json` build profile will be used when evaluating your `app.config.js` when running eas build and will be available to all steps of the build process on the EAS Build server.      
+> [!Note]   
+> You can also build the application locally. To do this, run the following command:
 
->[!Note]
-  This may result in some duplication of variables between `.env` files and eas.json build profiles, but makes it easier to see what variables will be applied across all environments.
+  ```bash
+  # For android
+  npm run android
+
+  # For ios
+  npm run ios
+  ```
 
 ## 🪟Screenshots
 
 ### **Login-Signup Pages**
 |                   Login                   |                  Signup                   |
 | :---------------------------------------: | :---------------------------------------: |
-| <img src="./images/ss1.jpg"  width="250"> | <img src="./images/ss2.jpg"  width="250"> |
+| <img src="./media/ss1.jpg"  width="250"> | <img src="./media/ss2.jpg"  width="250"> |
 
 
 ### **Chats Page**
 |                   Chats                   |                   Users                   |                Group chat                 |               Delete chats                |
 | :---------------------------------------: | :---------------------------------------: | :---------------------------------------: | :---------------------------------------: |
-| <img src="./images/ss3.jpg"  width="250"> | <img src="./images/ss4.jpg"  width="250"> | <img src="./images/ss5.jpg"  width="250"> | <img src="./images/ss7.jpg"  width="250"> |
+| <img src="./media/ss3.jpg"  width="250"> | <img src="./media/ss4.jpg"  width="250"> | <img src="./media/ss5.jpg"  width="250"> | <img src="./media/ss7.jpg"  width="250"> |
 
 
 ### **Settings Page**
 |                 Settings                  |                  Profile                  |                    Help                    |                  Account                   |
 | :---------------------------------------: | :---------------------------------------: | :----------------------------------------: | :----------------------------------------: |
-| <img src="./images/ss8.jpg"  width="250"> | <img src="./images/ss9.jpg"  width="250"> | <img src="./images/ss10.jpg"  width="250"> | <img src="./images/ss11.jpg"  width="250"> |
+| <img src="./media/ss8.jpg"  width="250"> | <img src="./media/ss9.jpg"  width="250"> | <img src="./media/ss10.jpg"  width="250"> | <img src="./media/ss11.jpg"  width="250"> |
 
 
 ### **Chat Page**
 |                Emoji Panel                 |                Note to Self                |              Main Chat Screen              |          Chat Information Screen           |
 | :----------------------------------------: | :----------------------------------------: | :----------------------------------------: | :----------------------------------------: |
-| <img src="./images/ss12.jpg"  width="250"> | <img src="./images/ss13.jpg"  width="250"> | <img src="./images/ss14.jpg"  width="250"> | <img src="./images/ss15.jpg"  width="250"> |
+| <img src="./media/ss12.jpg"  width="250"> | <img src="./media/ss13.jpg"  width="250"> | <img src="./media/ss14.jpg"  width="250"> | <img src="./media/ss15.jpg"  width="250"> |
 
 
 ###  **Others**
-| Message Indicator |
-| :---------------: |
-| <img src="./images/ss16.jpg"  width="250">|
+|             Message Indicator              |
+| :----------------------------------------: |
+| <img src="./media/ss16.jpg"  width="250"> |
 
 ## 📝Credits
 
