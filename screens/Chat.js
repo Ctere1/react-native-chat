@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, StyleSheet, TouchableOpacity, Keyboard, Text, ActivityIndicator } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Keyboard, Text, ActivityIndicator, BackHandler } from "react-native";
 import { Ionicons } from '@expo/vector-icons'
 import { GiftedChat, Bubble, Send, InputToolbar } from 'react-native-gifted-chat'
 import { auth, database } from '../config/firebase';
@@ -26,26 +26,47 @@ function Chat({ route }) {
             })));
         });
 
-        return () => unsubscribe();
-    }, [route.params.id]);
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            //  Dismiss the keyboard
+            Keyboard.dismiss();
+            //  If the emoji panel is open, close it
+            if (modal) {
+                setModal(false);
+                return true;
+            }
+            return false;
+        });
 
-    const onSend = useCallback( async (m = []) => {
-       // Get messages
-      const chatDocRef = doc(database, "chats", route.params.id);
-      const chatDocSnap = await getDoc(chatDocRef);
+        //  Dismiss the emoji panel when the keyboard is shown
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+            if (modal) setModal(false);
+        });
 
-      const chatData = chatDocSnap.data();
-      const data = chatData.messages.map((message) => ({
-        ...message,
-        createdAt: message.createdAt.toDate(),
-        image: message.image ?? "",
-      }));
+        // Cleanup
+        return () => {
+            unsubscribe();
+            backHandler.remove();
+            keyboardDidShowListener.remove();
+        };
+    }, [route.params.id, modal]);
 
-      // Attach new message
-      const messagesWillSend = [{ ...m[0], sent: true, received: false }];
-      let chatMessages = GiftedChat.append(data, messagesWillSend);
+    const onSend = useCallback(async (m = []) => {
+        // Get messages
+        const chatDocRef = doc(database, "chats", route.params.id);
+        const chatDocSnap = await getDoc(chatDocRef);
 
-      setDoc(doc(database, 'chats', route.params.id), {
+        const chatData = chatDocSnap.data();
+        const data = chatData.messages.map((message) => ({
+            ...message,
+            createdAt: message.createdAt.toDate(),
+            image: message.image ?? "",
+        }));
+
+        // Attach new message
+        const messagesWillSend = [{ ...m[0], sent: true, received: false }];
+        let chatMessages = GiftedChat.append(data, messagesWillSend);
+
+        setDoc(doc(database, 'chats', route.params.id), {
             messages: chatMessages,
             lastUpdated: Date.now()
         }, { merge: true });
@@ -64,50 +85,50 @@ function Chat({ route }) {
     };
 
     const uploadImageAsync = async (uri) => {
-      setUploading(true);
-      const blob = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onload = () => resolve(xhr.response);
-        xhr.onerror = () => reject(new TypeError("Network request failed"));
-        xhr.responseType = "blob";
-        xhr.open("GET", uri, true);
-        xhr.send(null);
-      });
-      const randomString = uuid.v4();
-      const fileRef = ref(getStorage(), randomString);
+        setUploading(true);
+        const blob = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.onload = () => resolve(xhr.response);
+            xhr.onerror = () => reject(new TypeError("Network request failed"));
+            xhr.responseType = "blob";
+            xhr.open("GET", uri, true);
+            xhr.send(null);
+        });
+        const randomString = uuid.v4();
+        const fileRef = ref(getStorage(), randomString);
 
-      const uploadTask = uploadBytesResumable(fileRef, blob);
+        const uploadTask = uploadBytesResumable(fileRef, blob);
 
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          print("Upload percent:", progress);
-        },
-        (error) => {
-          // Handle unsuccessful uploads
-          console.log(error);
-          reject(error);
-        },
-        async () => {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          setUploading(false);
-          onSend([
-            {
-              _id: randomString,
-              createdAt: new Date(),
-              text: "",
-              image: downloadUrl,
-              user: {
-                _id: auth?.currentUser?.email,
-                name: auth?.currentUser?.displayName,
-                avatar: "https://i.pravatar.cc/300",
-              },
+        uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+                const progress =
+                    (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                print("Upload percent:", progress);
             },
-          ]);
-        }
-      );
+            (error) => {
+                // Handle unsuccessful uploads
+                console.log(error);
+                reject(error);
+            },
+            async () => {
+                const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                setUploading(false);
+                onSend([
+                    {
+                        _id: randomString,
+                        createdAt: new Date(),
+                        text: "",
+                        image: downloadUrl,
+                        user: {
+                            _id: auth?.currentUser?.email,
+                            name: auth?.currentUser?.displayName,
+                            avatar: "https://i.pravatar.cc/300",
+                        },
+                    },
+                ]);
+            }
+        );
     };
 
     const renderBubble = useMemo(() => (props) => (
@@ -121,31 +142,33 @@ function Chat({ route }) {
     ), []);
 
     const renderSend = useMemo(() => (props) => (
-        <>
-            <TouchableOpacity style={styles.addImageIcon} onPress={pickImage}>
-                <View>
-                    <Ionicons
-                        name='attach-outline'
-                        size={32}
-                        color={colors.teal} />
-                </View>
-            </TouchableOpacity>
-            <Send {...props}>
-                <View style={{ justifyContent: 'center', height: '100%', marginLeft: 8, marginRight: 4, marginTop: 12 }}>
-                    <Ionicons
-                        name='send'
-                        size={24}
-                        color={colors.teal} />
-                </View>
-            </Send>
-        </>
+        <TouchableOpacity style={styles.addImageIcon} onPress={pickImage}>
+            <View>
+                <Ionicons
+                    name='attach-outline'
+                    size={32}
+                    color={colors.teal}
+                />
+            </View>
+        </TouchableOpacity>
     ), []);
 
     const renderInputToolbar = useMemo(() => (props) => (
-        <InputToolbar {...props}
-            containerStyle={styles.inputToolbar}
-            renderActions={renderActions}
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 4, backgroundColor: 'white' }}>
+            <InputToolbar {...props}
+                containerStyle={styles.inputToolbar}
+                renderActions={renderActions}
+            />
+            <Send {...props}>
+                <View style={styles.sendIconContainer}>
+                    <Ionicons
+                        name='send'
+                        size={24}
+                        color={colors.teal}
+                    />
+                </View>
+            </Send>
+        </View>
     ), []);
 
     const renderActions = useMemo(() => () => (
@@ -154,19 +177,24 @@ function Chat({ route }) {
                 <Ionicons
                     name='happy-outline'
                     size={32}
-                    color={colors.teal} />
+                    color={colors.teal}
+                />
             </View>
         </TouchableOpacity>
     ), [modal]);
 
     const handleEmojiPanel = useCallback(() => {
-        if (modal) {
-            setModal(false);
-        } else {
+        setModal((prevModal) => {
+            if (prevModal) {
+                // If the modal is already open, close it
+                Keyboard.dismiss();
+                return false;
+            }
+            // If the modal is closed, open it
             Keyboard.dismiss();
-            setModal(true);
-        }
-    }, [modal]);
+            return true;
+        });
+    }, []);
 
     const renderLoading = useMemo(() => () => (
         <View style={styles.loadingContainer}>
@@ -237,10 +265,27 @@ function Chat({ route }) {
 
 const styles = StyleSheet.create({
     inputToolbar: {
-        bottom: 6,
-        marginLeft: 8,
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        borderRadius: 22,
+        backgroundColor: 'white',
+        borderWidth: 0.5,
+        borderColor: colors.grey,
+        marginHorizontal: 8,
+    },
+    sendIconContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 44,
+        height: 44,
         marginRight: 8,
-        borderRadius: 16,
+        borderRadius: 22,
+        backgroundColor: 'white',
+        borderWidth: 0.5,
+        borderColor: colors.grey,
     },
     emojiIcon: {
         marginLeft: 4,
@@ -277,15 +322,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     loadingContainerUpload: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "rgba(0, 0, 0, 0.5)", 
-      zIndex: 999, 
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        zIndex: 999,
     }
 });
 
