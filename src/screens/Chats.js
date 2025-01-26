@@ -94,28 +94,6 @@ const Chats = ({ setUnreadCount }) => {
     }, [setUnreadCount])
   );
 
-  useEffect(() => {
-    updateNavigationOptions();
-  }, [selectedItems, updateNavigationOptions]);
-
-  const updateNavigationOptions = useCallback(() => {
-    if (selectedItems.length > 0) {
-      navigation.setOptions({
-        headerRight: () => (
-          <TouchableOpacity style={styles.trashBin} onPress={handleDeleteChat}>
-            <Ionicons name="trash" size={24} color={colors.teal} />
-          </TouchableOpacity>
-        ),
-        headerLeft: () => <Text style={styles.itemCount}>{selectedItems.length}</Text>,
-      });
-    } else {
-      navigation.setOptions({
-        headerRight: null,
-        headerLeft: null,
-      });
-    }
-  }, [selectedItems, navigation, handleDeleteChat]);
-
   const handleChatName = (chat) => {
     const { users } = chat.data();
     const currentUser = auth?.currentUser;
@@ -206,6 +184,29 @@ const Chats = ({ setUnreadCount }) => {
       { cancelable: true }
     );
   }, [selectedItems, chats, deSelectItems]); // Memoize based on these dependencies
+
+
+  const updateNavigationOptions = useCallback(() => {
+    if (selectedItems.length > 0) {
+      navigation.setOptions({
+        headerRight: () => (
+          <TouchableOpacity style={styles.trashBin} onPress={handleDeleteChat}>
+            <Ionicons name="trash" size={24} color={colors.teal} />
+          </TouchableOpacity>
+        ),
+        headerLeft: () => <Text style={styles.itemCount}>{selectedItems.length}</Text>,
+      });
+    } else {
+      navigation.setOptions({
+        headerRight: null,
+        headerLeft: null,
+      });
+    }
+  }, [selectedItems, navigation, handleDeleteChat]);
+
+  useEffect(() => {
+    updateNavigationOptions();
+  }, [selectedItems, updateNavigationOptions]);
 
   const handleSubtitle = (chat) => {
     const message = chat.data().messages[0];
