@@ -1,30 +1,34 @@
-import React, { useState, createContext, useContext, useEffect } from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
-import { View, ActivityIndicator } from 'react-native';
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { registerRootComponent } from 'expo';
 import { Ionicons } from '@expo/vector-icons';
-import Chats from './screens/Chats';
-import Settings from "./screens/Settings";
-import { colors } from "./config/constants";
-import SignUp from "./screens/SignUp";
-import Chat from "./screens/Chat";
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './config/firebase';
-import Profile from "./screens/Profile";
-import Login from "./screens/Login";
-import Users from "./screens/Users";
-import About from "./screens/About";
-import Account from "./screens/Account";
-import Help from "./screens/Help";
-import Group from "./screens/Group";
-import ChatInfo from "./screens/ChatInfo";
-import ChatHeader from "./components/ChatHeader";
-import ChatMenu from "./components/ChatMenu";
-import { MenuProvider } from "react-native-popup-menu";
+import { View, ActivityIndicator } from 'react-native';
+import { MenuProvider } from 'react-native-popup-menu';
+import React, { useState, useEffect, useContext } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import { AuthenticatedUserProvider, AuthenticatedUserContext } from "./contexts/AuthenticatedUserContext";
-import { UnreadMessagesProvider, UnreadMessagesContext } from "./contexts/UnreadMessagesContext";
+import Chat from './screens/Chat';
+import Help from './screens/Help';
+import Chats from './screens/Chats';
+import Login from './screens/Login';
+import Users from './screens/Users';
+import About from './screens/About';
+import Group from './screens/Group';
+import SignUp from './screens/SignUp';
+import Profile from './screens/Profile';
+import Account from './screens/Account';
+import { auth } from './config/firebase';
+import Settings from './screens/Settings';
+import ChatInfo from './screens/ChatInfo';
+import { colors } from './config/constants';
+import ChatMenu from './components/ChatMenu';
+import ChatHeader from './components/ChatHeader';
+import { UnreadMessagesContext, UnreadMessagesProvider } from './contexts/UnreadMessagesContext';
+import {
+  AuthenticatedUserContext,
+  AuthenticatedUserProvider,
+} from './contexts/AuthenticatedUserContext';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -81,8 +85,8 @@ const MainStack = () => (
 
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name='Login' component={Login} />
-    <Stack.Screen name='SignUp' component={SignUp} />
+    <Stack.Screen name="Login" component={Login} />
+    <Stack.Screen name="SignUp" component={SignUp} />
   </Stack.Navigator>
 );
 
@@ -91,31 +95,26 @@ const RootNavigator = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async authenticatedUser => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (authenticatedUser) => {
       setUser(authenticatedUser || null);
       setIsLoading(false);
     });
 
     return unsubscribeAuth;
-  }, []);
+  }, [setUser]);
 
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size='large' />
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
-  return (
-    <NavigationContainer>
-      {user ? <MainStack /> : <AuthStack />}
-    </NavigationContainer>
-  );
+  return <NavigationContainer>{user ? <MainStack /> : <AuthStack />}</NavigationContainer>;
 };
 
-const App = () => {
-  return (
+const App = () => (
     <MenuProvider>
       <AuthenticatedUserProvider>
         <UnreadMessagesProvider>
@@ -124,6 +123,5 @@ const App = () => {
       </AuthenticatedUserProvider>
     </MenuProvider>
   );
-};
 
-export default App;
+  export default registerRootComponent(App);

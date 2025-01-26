@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect } from "react";
+import PropTypes from 'prop-types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useMemo, useState, useEffect, createContext } from 'react';
 
 export const UnreadMessagesContext = createContext();
 
@@ -20,9 +21,11 @@ export const UnreadMessagesProvider = ({ children }) => {
     loadUnreadCount();
   }, []);
 
-  return (
-    <UnreadMessagesContext.Provider value={{ unreadCount, setUnreadCount }}>
-      {children}
-    </UnreadMessagesContext.Provider>
-  );
+  const value = useMemo(() => ({ unreadCount, setUnreadCount }), [unreadCount, setUnreadCount]);
+
+  return <UnreadMessagesContext.Provider value={value}>{children}</UnreadMessagesContext.Provider>;
+};
+
+UnreadMessagesProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };

@@ -1,9 +1,13 @@
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import Constants from 'expo-constants';
-import { initializeAuth, getReactNativePersistence, browserSessionPersistence } from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import {
+  initializeAuth,
+  getReactNativePersistence,
+  browserSessionPersistence,
+} from 'firebase/auth';
 
 // Firebase config
 const firebaseConfig = {
@@ -14,15 +18,17 @@ const firebaseConfig = {
   messagingSenderId: Constants.expoConfig.extra.messagingSenderId,
   appId: Constants.expoConfig.extra.appId,
   databaseURL: Constants.expoConfig.extra.databaseURL,
-  measurementId: Constants.expoConfig.extra.measurementId
+  measurementId: Constants.expoConfig.extra.measurementId,
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-const persistence = Platform.OS === 'web' ? browserSessionPersistence : getReactNativePersistence(ReactNativeAsyncStorage);
+const persistence =
+  Platform.OS === 'web'
+    ? browserSessionPersistence
+    : getReactNativePersistence(ReactNativeAsyncStorage);
 
 export const auth = initializeAuth(app, { persistence });
-
 
 export const database = getFirestore();
