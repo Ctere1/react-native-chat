@@ -39,9 +39,9 @@
 
 **React Native Chat App** is a real-time chat application built using [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/), powered by [Firebase](https://firebase.google.com/) (Web v9) for authentication and real-time messaging.
 
-**Demo Video:**  
-[Demo.mp4](./media/ReactNativeChat-Live-Demo.mp4)  
-[Watch on GitHub](https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8716-bf274c059d2e)
+- For the live demo video see [Demo.mp4](./media/ReactNativeChat-Live-Demo.mp4)     
+
+https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8716-bf274c059d2e
 
 > [!NOTE] 
 > See screenshots below for a preview.
