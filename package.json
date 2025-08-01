@@ -2,6 +2,21 @@
   "name": "react-native-chat",
   "version": "1.0.0",
   "main": "./src/App.js",
+  "private": false,
+  "license": "MIT",
+  "author": "Cemil Tan",
+  "description": "A React Native chat application using Expo, Firebase, and various libraries for enhanced functionality.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ctere1/react-native-chat.git"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "chat",
+    "firebase",
+    "mobile"
+  ],
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -9,7 +24,7 @@
     "web": "expo start --web",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
-    "prettier": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\""
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
@@ -37,8 +52,8 @@
     "react-native": "0.79.5",
     "react-native-emoji-modal": "^0.2.4",
     "react-native-gesture-handler": "~2.24.0",
-    "react-native-gifted-chat": "^2.6.5",
-    "react-native-popup-menu": "^0.16.1",
+    "react-native-gifted-chat": "2.6.5",
+    "react-native-popup-menu": "^0.18.0",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
@@ -66,5 +81,11 @@
     "globals": "^15.14.0",
     "prettier": "^3.6.2"
   },
-  "private": true
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "listUnknownPackages": false
+      }
+    }
+  }
 }
