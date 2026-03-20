@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Text,
   View,
@@ -9,23 +10,28 @@ import {
   TextInput,
   StatusBar,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
 
 import { auth } from '../config/firebase';
-import { colors } from '../config/constants';
 import backImage from '../assets/background.png';
+import { colors, spacing } from '../config/constants';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const onHandleLogin = () => {
-    if (email !== '' && password !== '') {
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => console.log('Login success'))
-        .catch((err) => Alert.alert('Login error', err.message));
+  const onHandleLogin = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      Alert.alert('Missing details', 'Please enter both your email and password.');
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, trimmedEmail, password);
+    } catch (error) {
+      Alert.alert('Login failed', error.message);
     }
   };
 
@@ -43,7 +49,7 @@ export default function Login({ navigation }) {
           textContentType="emailAddress"
           autoFocus
           value={email}
-          onChangeText={(text) => setEmail(text)}
+          onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}
@@ -53,23 +59,17 @@ export default function Login({ navigation }) {
           secureTextEntry
           textContentType="password"
           value={password}
-          onChangeText={(text) => setPassword(text)}
+          onChangeText={setPassword}
         />
         <TouchableOpacity style={styles.button} onPress={onHandleLogin}>
-          <Text style={{ fontWeight: 'bold', color: '#fff', fontSize: 18 }}> Log In</Text>
+          <Text style={styles.buttonLabel}>Log In</Text>
         </TouchableOpacity>
-        <View
-          style={{ marginTop: 30, flexDirection: 'row', alignItems: 'center', alignSelf: 'center' }}
-        >
-          <Text style={{ color: 'gray', fontWeight: '600', fontSize: 14 }}>
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>
             Don&apos;t have an account? &nbsp;
           </Text>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate('SignUp');
-            }}
-          >
-            <Text style={{ color: colors.pink, fontWeight: '600', fontSize: 14 }}> Sign Up</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+            <Text style={styles.footerLink}>Sign Up</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -91,23 +91,44 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     height: 58,
     justifyContent: 'center',
-    marginTop: 40,
+    marginTop: spacing.sm,
+  },
+  buttonLabel: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   container: {
     backgroundColor: '#fff',
     flex: 1,
   },
+  footerLink: {
+    color: colors.pink,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  footerRow: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    marginTop: spacing.lg,
+  },
+  footerText: {
+    color: 'gray',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   form: {
     flex: 1,
     justifyContent: 'center',
-    marginHorizontal: 30,
+    marginHorizontal: spacing.xl,
   },
   input: {
     backgroundColor: '#F6F7FB',
     borderRadius: 10,
     fontSize: 16,
     height: 58,
-    marginBottom: 20,
+    marginBottom: spacing.sm,
     padding: 12,
   },
   title: {
@@ -115,7 +136,7 @@ const styles = StyleSheet.create({
     color: 'black',
     fontSize: 36,
     fontWeight: 'bold',
-    paddingBottom: 24,
+    marginBottom: spacing.lg,
   },
   whiteSheet: {
     backgroundColor: '#fff',

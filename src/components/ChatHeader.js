@@ -3,26 +3,26 @@ import PropTypes from 'prop-types';
 import { useNavigation } from '@react-navigation/native';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 
-import { colors } from '../config/constants';
+import { buildInitials } from '../utils/chat';
+import { colors, spacing } from '../config/constants';
 
 const ChatHeader = ({ chatName, chatId }) => {
   const navigation = useNavigation();
+  const handleOpenChatInfo = () => navigation.navigate('ChatInfo', { chatId, chatName });
 
   return (
     <TouchableOpacity
+      accessibilityHint="Opens chat details"
+      accessibilityLabel={`${chatName}. Open chat details`}
+      accessibilityRole="button"
       style={styles.container}
-      onPress={() => navigation.navigate('ChatInfo', { chatId, chatName })}
+      onPress={handleOpenChatInfo}
     >
-      <TouchableOpacity
-        style={styles.avatar}
-        onPress={() => navigation.navigate('ChatInfo', { chatId, chatName })}
-      >
+      <View style={styles.avatar}>
         <View>
-          <Text style={styles.avatarLabel}>
-            {chatName.split(' ').reduce((prev, current) => `${prev}${current[0]}`, '')}
-          </Text>
+          <Text style={styles.avatarLabel}>{buildInitials(chatName)}</Text>
         </View>
-      </TouchableOpacity>
+      </View>
 
       <Text style={styles.chatName}>{chatName}</Text>
     </TouchableOpacity>
@@ -36,8 +36,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     height: 40,
     justifyContent: 'center',
-    marginLeft: -30,
-    marginRight: 10,
+    marginRight: spacing.sm,
     width: 40,
   },
   avatarLabel: {
@@ -52,7 +51,8 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     flexDirection: 'row',
-    paddingHorizontal: 10,
+    minHeight: 44,
+    paddingHorizontal: spacing.sm,
   },
 });
 

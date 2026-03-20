@@ -1,13 +1,14 @@
 import PropTypes from 'prop-types';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc } from 'firebase/firestore';
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, Alert, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Alert, FlatList, StyleSheet } from 'react-native';
 
 import Cell from '../components/Cell';
-import { colors } from '../config/constants';
 import { database } from '../config/firebase';
+import { colors, layout, spacing } from '../config/constants';
+import { buildInitials, dedupeUsersByEmail } from '../utils/chat';
 
 const ChatInfo = ({ route }) => {
   const { chatId, chatName } = route.params;
@@ -54,26 +55,24 @@ const ChatInfo = ({ route }) => {
     </View>
   );
 
-  const uniqueUsers = Array.from(new Map(users.map((user) => [user.email, user])).values());
+  const uniqueUsers = useMemo(() => dedupeUsersByEmail(users), [users]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity style={styles.avatar}>
-        <View>
-          <Text style={styles.avatarLabel}>
-            {chatName.split(' ').reduce((prev, current) => `${prev}${current[0]}`, '')}
-          </Text>
+      <View style={styles.headerSection}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarLabel}>{buildInitials(chatName)}</Text>
         </View>
-      </TouchableOpacity>
-      <View style={styles.chatHeader}>
-        {groupName ? (
-          <>
-            <Text style={styles.groupLabel}>Group</Text>
+        <View style={styles.chatHeader}>
+          {groupName ? (
+            <>
+              <Text style={styles.groupLabel}>Group</Text>
+              <Text style={styles.chatTitle}>{chatName}</Text>
+            </>
+          ) : (
             <Text style={styles.chatTitle}>{chatName}</Text>
-          </>
-        ) : (
-          <Text style={styles.chatTitle}>{chatName}</Text>
-        )}
+          )}
+        </View>
       </View>
 
       <Cell
@@ -100,33 +99,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     backgroundColor: colors.primary,
-    borderRadius: 60,
-    height: 120,
+    borderRadius: 48,
+    height: 96,
     justifyContent: 'center',
-    marginBottom: 10,
-    marginTop: 20,
-    width: 120,
+    width: 96,
   },
   avatarLabel: {
     color: 'white',
-    fontSize: 36,
+    fontSize: 30,
     fontWeight: 'bold',
   },
   cell: {
     backgroundColor: 'white',
-    borderRadius: 10,
-    elevation: 0.5,
-    marginBottom: 15,
-    marginHorizontal: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    borderRadius: layout.cardRadius,
+    marginBottom: spacing.sm,
+    marginHorizontal: layout.pageInset,
+    overflow: 'hidden',
   },
   chatHeader: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: spacing.sm,
   },
   chatTitle: {
     color: '#333',
@@ -135,14 +127,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   container: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#F8FAFC',
     flex: 1,
   },
   groupLabel: {
     color: colors.primary,
     fontSize: 16,
     fontWeight: '500',
-    marginBottom: 4,
+    marginBottom: spacing.xxs,
+  },
+  headerSection: {
+    marginBottom: spacing.md,
+    marginTop: layout.pageTopInset,
   },
   userContainer: {
     alignItems: 'center',
@@ -150,15 +146,15 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
     borderBottomWidth: 1,
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   userEmail: {
     color: '#666',
     fontSize: 14,
   },
   userInfo: {
-    marginLeft: 12,
+    marginLeft: spacing.sm,
   },
   userName: {
     color: '#333',
@@ -167,21 +163,16 @@ const styles = StyleSheet.create({
   },
   usersList: {
     backgroundColor: 'white',
-    borderRadius: 10,
-    elevation: 0.5,
-    marginHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    borderRadius: layout.cardRadius,
+    marginHorizontal: layout.pageInset,
+    overflow: 'hidden',
   },
   usersTitle: {
     color: '#333',
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
-    marginHorizontal: 16,
-    marginTop: 20,
+    marginBottom: spacing.sm,
+    marginHorizontal: layout.pageInset,
   },
 });
 

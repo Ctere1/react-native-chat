@@ -1,91 +1,127 @@
-import React from 'react';
 import PropTypes from 'prop-types';
-import { Ionicons } from '@expo/vector-icons';
-import { Text, View, Linking, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Alert, Share, Linking, ScrollView, StyleSheet } from 'react-native';
 
 import Cell from '../components/Cell';
 import { auth } from '../config/firebase';
-import { colors } from '../config/constants';
 import ContactRow from '../components/ContactRow';
+import { layout, spacing } from '../config/constants';
 
 const Settings = ({ navigation }) => {
-  async function openGithub(url) {
-    await Linking.openURL(url);
-  }
+  const githubUrl = 'https://github.com/Ctere1/react-native-chat';
+
+  const openExternalLink = useCallback(async (url, errorTitle) => {
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      Alert.alert(errorTitle, error.message);
+    }
+  }, []);
+
+  const handleInviteFriend = useCallback(async () => {
+    try {
+      await Share.share({
+        message: `Check out React Native Chat: ${githubUrl}`,
+      });
+    } catch (error) {
+      Alert.alert('Unable to share', error.message);
+    }
+  }, [githubUrl]);
+
+  const handleOpenProfile = useCallback(() => navigation.navigate('Profile'), [navigation]);
+  const handleOpenAccount = useCallback(() => navigation.navigate('Account'), [navigation]);
+  const handleOpenHelp = useCallback(() => navigation.navigate('Help'), [navigation]);
+  const handleOpenAbout = useCallback(() => navigation.navigate('About'), [navigation]);
+  const handleOpenGithub = useCallback(
+    () => openExternalLink(githubUrl, 'Unable to open GitHub'),
+    [githubUrl, openExternalLink]
+  );
 
   return (
-    <View>
-      <ContactRow
-        name={auth?.currentUser?.displayName ?? 'No name'}
-        subtitle={auth?.currentUser?.email}
-        style={styles.contactRow}
-        onPress={() => {
-          navigation.navigate('Profile');
-        }}
-      />
-
-      <Cell
-        title="Account"
-        subtitle="Privacy, logout, delete account"
-        icon="key-outline"
-        onPress={() => {
-          navigation.navigate('Account');
-        }}
-        iconColor="black"
-        style={{ marginTop: 20 }}
-      />
-
-      <Cell
-        title="Help"
-        subtitle="Contact us, app info"
-        icon="help-circle-outline"
-        iconColor="black"
-        onPress={() => {
-          navigation.navigate('Help');
-        }}
-      />
-
-      <Cell
-        title="Invite a friend"
-        icon="people-outline"
-        iconColor="black"
-        onPress={() => {
-          alert('Share touched');
-        }}
-        showForwardIcon={false}
-      />
-
-      <TouchableOpacity
-        style={styles.githubLink}
-        onPress={() => openGithub('https://github.com/Ctere1/react-native-chat')}
-      >
-        <View style={styles.githubContainer}>
-          <Ionicons name="logo-github" size={12} style={{ color: colors.teal }} />
-          <Text style={{ fontSize: 12, fontWeight: '400', marginLeft: 4 }}>App&apos;s Github</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.card}>
+          <ContactRow
+            name={auth?.currentUser?.displayName ?? 'No name'}
+            subtitle={auth?.currentUser?.email ?? 'No email'}
+            style={styles.contactRow}
+            onPress={handleOpenProfile}
+          />
         </View>
-      </TouchableOpacity>
-    </View>
+
+        <View style={styles.card}>
+          <Cell
+            title="Account"
+            subtitle="Privacy, logout, and account deletion"
+            icon="key-outline"
+            onPress={handleOpenAccount}
+            iconColor="black"
+            accessibilityHint="Opens account actions"
+          />
+
+          <Cell
+            title="Help"
+            subtitle="Support, troubleshooting, and project help"
+            icon="help-circle-outline"
+            iconColor="black"
+            onPress={handleOpenHelp}
+            accessibilityHint="Opens help and support"
+          />
+
+          <Cell
+            title="About"
+            subtitle="Project details and Firebase setup model"
+            icon="information-circle-outline"
+            iconColor="black"
+            onPress={handleOpenAbout}
+            accessibilityHint="Opens app information"
+          />
+        </View>
+
+        <View style={styles.card}>
+          <Cell
+            title="Invite a friend"
+            subtitle="Share the app with someone you trust"
+            icon="people-outline"
+            iconColor="black"
+            onPress={handleInviteFriend}
+            showForwardIcon={false}
+            accessibilityHint="Opens the system share sheet"
+          />
+
+          <Cell
+            title="Open source project"
+            subtitle="View the repository and release history"
+            icon="logo-github"
+            tintColor="#111827"
+            onPress={handleOpenGithub}
+            accessibilityHint="Opens the GitHub repository in your browser"
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  card: {
+    backgroundColor: 'white',
+    borderRadius: layout.cardRadius,
+    marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
   contactRow: {
     backgroundColor: 'white',
-    borderColor: colors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  githubContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
+  container: {
+    backgroundColor: '#F8FAFC',
+    flex: 1,
   },
-  githubLink: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    height: 20,
-    justifyContent: 'center',
-    marginTop: 20,
-    width: 100,
+  content: {
+    paddingBottom: spacing.lg,
+    paddingHorizontal: layout.pageInset,
+    paddingTop: layout.pageTopInset,
   },
 });
 

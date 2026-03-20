@@ -1,12 +1,16 @@
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
-import { doc, query, where, setDoc, orderBy, collection, onSnapshot } from 'firebase/firestore';
+import { View, Text, Alert, FlatList, StyleSheet } from 'react-native';
+import { query, where, orderBy, collection, onSnapshot } from 'firebase/firestore';
 
 import Cell from '../components/Cell';
-import { colors } from '../config/constants';
 import ContactRow from '../components/ContactRow';
 import { auth, database } from '../config/firebase';
+import { createDirectChat } from '../services/chatService';
+import { colors, layout, spacing } from '../config/constants';
+import { backfillCurrentUserChatMetadata } from '../services/chatMessageService';
+import { getDisplayName, getUserStatusText, isChatVisibleForUser } from '../utils/chat';
 
 const Users = () => {
   const navigation = useNavigation();
@@ -14,29 +18,42 @@ const Users = () => {
   const [existingChats, setExistingChats] = useState([]);
 
   useEffect(() => {
-    const collectionUserRef = collection(database, 'users');
-    const q = query(collectionUserRef, orderBy('name', 'asc'));
-    const unsubscribeUsers = onSnapshot(q, (snapshot) => {
-      setUsers(snapshot.docs);
-    });
+    let unsubscribeUsers = () => {};
+    let unsubscribeChats = () => {};
 
-    // Get existing chats to avoid creating duplicate chats
-    const collectionChatsRef = collection(database, 'chats');
-    const q2 = query(
-      collectionChatsRef,
-      where('users', 'array-contains', {
-        email: auth?.currentUser?.email,
-        name: auth?.currentUser?.displayName,
-        deletedFromChat: false,
-      }),
-      where('groupName', '==', '')
-    );
-    const unsubscribeChats = onSnapshot(q2, (snapshot) => {
-      const existing = snapshot.docs.map((existingChat) => ({
-        chatId: existingChat.id,
-        userEmails: existingChat.data().users,
-      }));
-      setExistingChats(existing);
+    const subscribeToData = async () => {
+      await backfillCurrentUserChatMetadata(auth?.currentUser?.email);
+
+      const collectionUserRef = collection(database, 'users');
+      const q = query(collectionUserRef, orderBy('name', 'asc'));
+      unsubscribeUsers = onSnapshot(q, (snapshot) => {
+        setUsers(snapshot.docs);
+      });
+
+      const collectionChatsRef = collection(database, 'chats');
+      const q2 = query(
+        collectionChatsRef,
+        where('userEmails', 'array-contains', auth?.currentUser?.email)
+      );
+      unsubscribeChats = onSnapshot(q2, (snapshot) => {
+        const existing = snapshot.docs
+          .filter(
+            (existingChat) =>
+              !existingChat.data().groupName
+              && isChatVisibleForUser(existingChat.data(), auth?.currentUser?.email)
+          )
+          .map((existingChat) => ({
+            chatId: existingChat.id,
+            userEmails:
+              existingChat.data().userEmails
+              ?? (existingChat.data().users ?? []).map((chatUser) => chatUser.email),
+          }));
+        setExistingChats(existing);
+      });
+    };
+
+    subscribeToData().catch((error) => {
+      Alert.alert('Unable to load users', error.message);
     });
 
     return () => {
@@ -49,26 +66,21 @@ const Users = () => {
     navigation.navigate('Group');
   }, [navigation]);
 
-  const handleNewUser = useCallback(() => {
-    alert('New user');
-  }, []);
-
   const handleNavigate = useCallback(
-    (user) => {
+    async (user) => {
       let navigationChatID = '';
       let messageYourselfChatID = '';
+      const selectedUser = user.data();
 
       existingChats.forEach((existingChat) => {
-        const isCurrentUserInTheChat = existingChat.userEmails.some(
-          (e) => e.email === auth?.currentUser?.email
-        );
+        const isCurrentUserInTheChat = existingChat.userEmails.includes(auth?.currentUser?.email);
         const isMessageYourselfExists = existingChat.userEmails.filter(
-          (e) => e.email === user.data().email
+          (email) => email === selectedUser.email
         ).length;
 
         if (
           isCurrentUserInTheChat &&
-          existingChat.userEmails.some((e) => e.email === user.data().email)
+          existingChat.userEmails.includes(selectedUser.email)
         ) {
           navigationChatID = existingChat.chatId;
         }
@@ -77,55 +89,57 @@ const Users = () => {
           messageYourselfChatID = existingChat.chatId;
         }
 
-        if (auth?.currentUser?.email === user.data().email) {
+        if (auth?.currentUser?.email === selectedUser.email) {
           navigationChatID = '';
         }
       });
 
-      if (messageYourselfChatID) {
-        navigation.navigate('Chat', { id: messageYourselfChatID, chatName: handleName(user) });
-      } else if (navigationChatID) {
-        navigation.navigate('Chat', { id: navigationChatID, chatName: handleName(user) });
-      } else {
-        // Creates new chat
-        const newRef = doc(collection(database, 'chats'));
-        setDoc(newRef, {
-          lastUpdated: Date.now(),
-          groupName: '', // It is not a group chat
-          users: [
-            {
-              email: auth?.currentUser?.email,
-              name: auth?.currentUser?.displayName,
-              deletedFromChat: false,
-            },
-            { email: user.data().email, name: user.data().name, deletedFromChat: false },
-          ],
-          lastAccess: [
-            { email: auth?.currentUser?.email, date: Date.now() },
-            { email: user.data().email, date: '' },
-          ],
-          messages: [],
-        }).then(() => {
-          navigation.navigate('Chat', { id: newRef.id, chatName: handleName(user) });
-        });
+      try {
+        if (messageYourselfChatID) {
+          navigation.navigate('Chat', { id: messageYourselfChatID, chatName: handleName(user) });
+        } else if (navigationChatID) {
+          navigation.navigate('Chat', { id: navigationChatID, chatName: handleName(user) });
+        } else {
+          const chatId = await createDirectChat({
+            currentUser: auth?.currentUser,
+            otherUser: selectedUser,
+          });
+
+          navigation.navigate('Chat', { id: chatId, chatName: handleName(user) });
+        }
+      } catch (error) {
+        Alert.alert('Unable to open chat', error.message);
       }
     },
     [existingChats, handleName, navigation]
   );
 
   const handleSubtitle = useCallback(
-    (user) => (user.data().email === auth?.currentUser?.email ? 'Message yourself' : 'User status'),
+    (user) => getUserStatusText(user.data().email, auth?.currentUser?.email),
     []
   );
 
-  const handleName = useCallback((user) => {
-    const { name } = user.data();
-    const { email } = user.data();
-    if (name) {
-      return email === auth?.currentUser?.email ? `${name}*(You)` : name;
-    }
-    return email || '~ No Name or Email ~';
-  }, []);
+  const handleName = useCallback(
+    (user) => getDisplayName(user.data(), auth?.currentUser?.email),
+    []
+  );
+
+  const renderUser = useCallback(
+    ({ item }) => (
+      <ContactRow
+        name={handleName(item)}
+        subtitle={handleSubtitle(item)}
+        onPress={() => handleNavigate(item)}
+        showForwardIcon={false}
+      />
+    ),
+    [handleName, handleNavigate, handleSubtitle]
+  );
+
+  const renderUsersHeader = useCallback(
+    () => <Text style={[styles.textContainer, styles.registeredUsersLabel]}>Registered users</Text>,
+    []
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -134,36 +148,30 @@ const Users = () => {
         icon="people"
         tintColor={colors.teal}
         onPress={handleNewGroup}
-        style={{ marginTop: 5 }}
-      />
-      <Cell
-        title="New user"
-        icon="person-add"
-        tintColor={colors.teal}
-        onPress={handleNewUser}
-        style={{ marginBottom: 10 }}
+        style={styles.newGroupCell}
       />
 
       {users.length === 0 ? (
-        <View style={styles.blankContainer}>
-          <Text style={styles.textContainer}>No registered users yet</Text>
+        <View style={styles.pageContent}>
+          <View style={styles.listCard}>
+            <View style={styles.blankContainer}>
+              <Text style={styles.textContainer}>No registered users yet</Text>
+            </View>
+          </View>
         </View>
       ) : (
-        <ScrollView>
-          <View>
-            <Text style={styles.textContainer}>Registered users</Text>
+        <View style={styles.pageContent}>
+          <View style={styles.listCard}>
+            <FlatList
+              data={users}
+              renderItem={renderUser}
+              keyExtractor={(item) => item.id}
+              ListHeaderComponent={renderUsersHeader}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.listContent}
+            />
           </View>
-          {users.map((user) => (
-            <React.Fragment key={user.id}>
-              <ContactRow
-                name={handleName(user)}
-                subtitle={handleSubtitle(user)}
-                onPress={() => handleNavigate(user)}
-                showForwardIcon={false}
-              />
-            </React.Fragment>
-          ))}
-        </ScrollView>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -174,14 +182,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
   },
   container: {
+    backgroundColor: '#F8FAFC',
     flex: 1,
+  },
+  listCard: {
+    backgroundColor: 'white',
+    borderRadius: layout.cardRadius,
+    flex: 1,
+    overflow: 'hidden',
+  },
+  listContent: {
+    paddingBottom: spacing.lg,
+  },
+  newGroupCell: {
+    borderRadius: layout.cardRadius,
+    marginHorizontal: layout.pageInset,
+    marginTop: layout.pageTopInset,
+    overflow: 'hidden',
+  },
+  pageContent: {
+    flex: 1,
+    paddingBottom: spacing.lg,
+    paddingHorizontal: layout.pageInset,
+    paddingTop: layout.pageTopInset,
+  },
+  registeredUsersLabel: {
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   textContainer: {
     fontSize: 16,
     fontWeight: '300',
-    marginLeft: 16,
+    marginHorizontal: spacing.md,
   },
 });
 

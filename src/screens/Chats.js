@@ -1,41 +1,47 @@
-import PropTypes from 'prop-types';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import {
-  doc,
-  where,
-  query,
-  setDoc,
-  orderBy,
-  deleteDoc,
-  collection,
-  onSnapshot,
-} from 'firebase/firestore';
+import { where, query, collection, onSnapshot } from 'firebase/firestore';
 import {
   Text,
   View,
   Alert,
+  FlatList,
   Platform,
   Pressable,
   StyleSheet,
-  ScrollView,
   BackHandler,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 
-import { colors } from '../config/constants';
 import ContactRow from '../components/ContactRow';
 import { auth, database } from '../config/firebase';
+import { deleteChatForUser } from '../services/chatService';
+import { colors, layout, spacing } from '../config/constants';
+import { scheduleChatNotification } from '../services/notificationService';
+import {
+  markChatAsRead,
+  ensureChatSchema,
+  backfillCurrentUserChatMetadata,
+} from '../services/chatMessageService';
+import {
+  getMessagePreview,
+  getChatDisplayName,
+  normalizeTimestamp,
+  isChatVisibleForUser,
+  getUnreadCountForUser,
+  getLastMessageFromChat,
+} from '../utils/chat';
 
-const Chats = ({ setUnreadCount }) => {
+const Chats = () => {
   const navigation = useNavigation();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState([]);
-  const [newMessages, setNewMessages] = useState({});
+  const notifiedMessageIdsRef = useRef(new Set());
+  const previousUnreadCountsRef = useRef({});
+  const migratingChatIdsRef = useRef(new Set());
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -48,111 +54,142 @@ const Chats = ({ setUnreadCount }) => {
       });
       return () => subscription.remove();
     }
-    // Always return a cleanup function for non-android platforms
-    return () => { };
+
+    return () => {};
   }, [selectedItems.length]);
 
   useFocusEffect(
     useCallback(() => {
-      let unsubscribe = () => { };
-      const loadNewMessages = async () => {
-        try {
-          const storedMessages = await AsyncStorage.getItem('newMessages');
-          const parsed = storedMessages ? JSON.parse(storedMessages) : {};
-          setNewMessages(parsed);
-          setUnreadCount(Object.values(parsed).reduce((total, num) => total + num, 0));
-        } catch (error) {
-          console.log('Error loading new messages from storage', error);
-        }
-      };
-      const chatsRef = collection(database, 'chats');
-      const q = query(
-        chatsRef,
-        where('users', 'array-contains', {
-          email: auth?.currentUser?.email,
-          name: auth?.currentUser?.displayName,
-          deletedFromChat: false,
-        }),
-        orderBy('lastUpdated', 'desc')
-      );
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        setChats(snapshot.docs);
-        setLoading(false);
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'modified') {
-            const chatId = change.doc.id;
-            const { messages } = change.doc.data();
-            if (Array.isArray(messages) && messages.length > 0) {
-              const firstMessage = messages[0];
-              if (
-                firstMessage.user &&
-                firstMessage.user._id !== auth?.currentUser?.email
-              ) {
-                setNewMessages((prev) => {
-                  const updated = { ...prev, [chatId]: (prev[chatId] || 0) + 1 };
-                  AsyncStorage.setItem('newMessages', JSON.stringify(updated));
-                  setUnreadCount(
-                    Object.values(updated).reduce((total, num) => total + num, 0)
-                  );
-                  return updated;
+      let unsubscribe = () => {};
+
+      const subscribeToChats = async () => {
+        await backfillCurrentUserChatMetadata(auth?.currentUser?.email);
+
+        const chatsRef = collection(database, 'chats');
+        const chatsQuery = query(
+          chatsRef,
+          where('userEmails', 'array-contains', auth?.currentUser?.email)
+        );
+
+        unsubscribe = onSnapshot(
+          chatsQuery,
+          (snapshot) => {
+            const visibleDocs = snapshot.docs.filter((chatDocument) =>
+              isChatVisibleForUser(chatDocument.data(), auth?.currentUser?.email)
+            );
+            const sortedDocs = [...visibleDocs].sort((left, right) => {
+              const leftDate = normalizeTimestamp(left.data().lastUpdated)?.getTime() ?? 0;
+              const rightDate = normalizeTimestamp(right.data().lastUpdated)?.getTime() ?? 0;
+
+              return rightDate - leftDate;
+            });
+
+            setChats(sortedDocs);
+            setLoading(false);
+
+            snapshot.docs.forEach((chatDocument) => {
+              const chatData = chatDocument.data();
+              const needsMigration =
+                Array.isArray(chatData.messages) ||
+                chatData.schemaVersion !== 2 ||
+                !Array.isArray(chatData.unreadCounts) ||
+                !Array.isArray(chatData.userEmails);
+
+              if (needsMigration && !migratingChatIdsRef.current.has(chatDocument.id)) {
+                migratingChatIdsRef.current.add(chatDocument.id);
+                ensureChatSchema({ chatId: chatDocument.id, chatData }).catch((error) => {
+                  console.log('Chat migration failed', error);
+                  migratingChatIdsRef.current.delete(chatDocument.id);
                 });
               }
-            }
+            });
+
+            snapshot.docChanges().forEach((change) => {
+              const chatData = change.doc.data();
+
+               if (!isChatVisibleForUser(chatData, auth?.currentUser?.email)) {
+                 return;
+               }
+
+              const unreadCount = getUnreadCountForUser(chatData, auth?.currentUser?.email);
+              const previousUnreadCount = previousUnreadCountsRef.current[change.doc.id] ?? 0;
+              const lastMessage = getLastMessageFromChat(chatData);
+
+              previousUnreadCountsRef.current[change.doc.id] = unreadCount;
+
+              if (
+                !lastMessage?._id ||
+                lastMessage.user?._id === auth?.currentUser?.email ||
+                unreadCount <= previousUnreadCount ||
+                notifiedMessageIdsRef.current.has(lastMessage._id)
+              ) {
+                return;
+              }
+
+              notifiedMessageIdsRef.current.add(lastMessage._id);
+              scheduleChatNotification({
+                chatId: change.doc.id,
+                title: getChatDisplayName(chatData, auth?.currentUser),
+                body: getMessagePreview(lastMessage, auth?.currentUser?.email),
+              });
+            });
+          },
+          (error) => {
+            setLoading(false);
+            Alert.alert('Unable to load chats', error.message);
           }
-        });
-      });
-      loadNewMessages();
-      return () => {
-        if (unsubscribe) unsubscribe();
+        );
       };
-    }, [setUnreadCount])
+
+      subscribeToChats().catch((error) => {
+        setLoading(false);
+        Alert.alert('Unable to load chats', error.message);
+      });
+
+      return () => unsubscribe();
+    }, [])
   );
 
-  const getChatName = useCallback((chat) => {
-    const { users, groupName } = chat.data();
-    const currentUser = auth?.currentUser;
-    if (groupName) return groupName;
-    if (Array.isArray(users) && users.length === 2) {
-      if (currentUser?.displayName) {
-        return users[0].name === currentUser.displayName ? users[1].name : users[0].name;
-      }
-      if (currentUser?.email) {
-        return users[0].email === currentUser.email ? users[1].email : users[0].email;
-      }
-    }
-    return '~ No Name or Email ~';
-  }, []);
+  const getChatName = useCallback(
+    (chat) => getChatDisplayName(chat.data(), auth?.currentUser),
+    []
+  );
 
-  const handleChatPress = async (chat) => {
-    const chatId = chat.id;
-    if (selectedItems.length) {
-      selectItems(chat);
-      return;
-    }
-    setNewMessages((prev) => {
-      const updated = { ...prev, [chatId]: 0 };
-      AsyncStorage.setItem('newMessages', JSON.stringify(updated));
-      setUnreadCount(Object.values(updated).reduce((total, num) => total + num, 0));
-      return updated;
-    });
-    navigation.navigate('Chat', { id: chatId, chatName: getChatName(chat) });
-  };
-
-  const handleChatLongPress = (chat) => selectItems(chat);
-
-  const selectItems = (chat) => {
+  const selectItems = useCallback((chat) => {
     setSelectedItems((prev) =>
       prev.includes(chat.id)
         ? prev.filter((id) => id !== chat.id)
         : [...prev, chat.id]
     );
-  };
+  }, []);
 
-  const getSelected = (chat) => selectedItems.includes(chat.id);
+  const handleChatPress = useCallback(
+    async (chat) => {
+      const chatId = chat.id;
+
+      if (selectedItems.length) {
+        selectItems(chat);
+        return;
+      }
+
+      try {
+        await markChatAsRead({ chatId, userEmail: auth?.currentUser?.email });
+      } catch (error) {
+        console.log('Unable to mark chat as read', error);
+      }
+
+      navigation.navigate('Chat', { id: chatId, chatName: getChatName(chat) });
+    },
+    [getChatName, navigation, selectItems, selectedItems.length]
+  );
+
+  const handleChatLongPress = useCallback((chat) => selectItems(chat), [selectItems]);
+
+  const getSelected = useCallback((chat) => selectedItems.includes(chat.id), [selectedItems]);
 
   const deSelectItems = useCallback(() => setSelectedItems([]), []);
 
-  const handleFabPress = () => navigation.navigate('Users');
+  const handleFabPress = useCallback(() => navigation.navigate('Users'), [navigation]);
 
   const handleDeleteChat = useCallback(() => {
     Alert.alert(
@@ -163,27 +200,29 @@ const Chats = ({ setUnreadCount }) => {
           text: 'Delete chat',
           style: 'destructive',
           onPress: async () => {
-            const deletePromises = selectedItems.map((chatId) => {
-              const chat = chats.find((c) => c.id === chatId);
-              if (!chat) return Promise.resolve();
-              const updatedUsers = chat
-                .data()
-                .users.map((user) =>
-                  user.email === auth?.currentUser?.email
-                    ? { ...user, deletedFromChat: true }
-                    : user
-                );
-              return setDoc(doc(database, 'chats', chatId), { users: updatedUsers }, { merge: true }).then(() => {
-                const deletedCount = updatedUsers.filter((u) => u.deletedFromChat).length;
-                if (deletedCount === updatedUsers.length) {
-                  return deleteDoc(doc(database, 'chats', chatId));
+            try {
+              const deletePromises = selectedItems.map(async (chatId) => {
+                const chat = chats.find((chatDocument) => chatDocument.id === chatId);
+
+                if (!chat) {
+                  return;
                 }
-                return Promise.resolve();
+
+                await deleteChatForUser({
+                  chatId,
+                  chatData: chat.data(),
+                  userEmail: auth?.currentUser?.email,
+                });
               });
-            });
-            Promise.all(deletePromises).then(() => {
+
+              await Promise.all(deletePromises);
+              setChats((currentChats) =>
+                currentChats.filter((chatDocument) => !selectedItems.includes(chatDocument.id))
+              );
               deSelectItems();
-            });
+            } catch (error) {
+              Alert.alert('Delete failed', error.message);
+            }
           },
         },
         { text: 'Cancel', style: 'cancel' },
@@ -210,58 +249,78 @@ const Chats = ({ setUnreadCount }) => {
   }, [selectedItems, navigation, handleDeleteChat]);
 
   const getSubtitle = useCallback((chat) => {
-    const { messages } = chat.data();
-    if (!messages || messages.length === 0) return 'No messages yet';
-    const message = messages[0];
-    const isCurrentUser = auth?.currentUser?.email === message.user._id;
-    const userName = isCurrentUser ? 'You' : (message.user.name || '').split(' ')[0];
-    let messageText = '';
-    if (message.image) messageText = 'sent an image';
-    else if (message.text.length > 20) messageText = `${message.text.substring(0, 20)}...`;
-    else messageText = message.text;
-    return `${userName}: ${messageText}`;
+    const lastMessage = getLastMessageFromChat(chat.data());
+
+    return getMessagePreview(lastMessage, auth?.currentUser?.email);
   }, []);
 
   const getSubtitle2 = useCallback((chat) => {
-    const { lastUpdated } = chat.data();
-    if (!lastUpdated) return '';
+    const lastUpdated = normalizeTimestamp(chat.data().lastUpdated);
+
+    if (!lastUpdated) {
+      return '';
+    }
+
     const options = { year: '2-digit', month: 'numeric', day: 'numeric' };
-    return new Date(lastUpdated).toLocaleDateString(undefined, options);
+    return lastUpdated.toLocaleDateString(undefined, options);
   }, []);
+
+  const renderChat = useCallback(
+    ({ item }) => (
+      <ContactRow
+        style={getSelected(item) ? styles.selectedContactRow : undefined}
+        name={getChatName(item)}
+        subtitle={getSubtitle(item)}
+        subtitle2={getSubtitle2(item)}
+        onPress={() => handleChatPress(item)}
+        onLongPress={() => handleChatLongPress(item)}
+        selected={getSelected(item)}
+        showForwardIcon={false}
+        newMessageCount={getUnreadCountForUser(item.data(), auth?.currentUser?.email)}
+      />
+    ),
+    [getChatName, getSelected, getSubtitle, getSubtitle2, handleChatLongPress, handleChatPress]
+  );
+
+  const renderEmptyChats = useCallback(
+    () => (
+      <View style={styles.emptyStateContainer}>
+        <Text style={styles.textContainer}>No conversations yet</Text>
+      </View>
+    ),
+    []
+  );
+
+  const renderListFooter = useCallback(
+    () => (
+      <View style={styles.footerContainer}>
+        <Text style={styles.disclaimerText}>
+          <Ionicons name="lock-open" size={12} style={styles.disclaimerIcon} /> Your personal
+          messages are not <Text style={styles.disclaimerEmphasis}>end-to-end-encrypted</Text>
+        </Text>
+      </View>
+    ),
+    []
+  );
 
   return (
     <Pressable style={styles.container} onPress={deSelectItems}>
       {loading ? (
         <ActivityIndicator size="large" color={colors.teal} style={styles.loadingContainer} />
       ) : (
-        <ScrollView>
-          {chats.length === 0 ? (
-            <View style={styles.blankContainer}>
-              <Text style={styles.textContainer}>No conversations yet</Text>
-            </View>
-          ) : (
-            chats.map((chat) => (
-              <ContactRow
-                key={chat.id}
-                style={getSelected(chat) ? styles.selectedContactRow : undefined}
-                name={getChatName(chat)}
-                subtitle={getSubtitle(chat)}
-                subtitle2={getSubtitle2(chat)}
-                onPress={() => handleChatPress(chat)}
-                onLongPress={() => handleChatLongPress(chat)}
-                selected={getSelected(chat)}
-                showForwardIcon={false}
-                newMessageCount={newMessages[chat.id] || 0}
-              />
-            ))
-          )}
-          <View style={styles.blankContainer}>
-            <Text style={{ fontSize: 12, margin: 15 }}>
-              <Ionicons name="lock-open" size={12} style={{ color: '#565656' }} /> Your personal
-              messages are not <Text style={{ color: colors.teal }}>end-to-end-encrypted</Text>
-            </Text>
+        <View style={styles.pageContent}>
+          <View style={styles.listCard}>
+            <FlatList
+              data={chats}
+              renderItem={renderChat}
+              keyExtractor={(item) => item.id}
+              ListEmptyComponent={renderEmptyChats}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.listContent}
+            />
           </View>
-        </ScrollView>
+          {renderListFooter()}
+        </View>
       )}
       <TouchableOpacity style={styles.fab} onPress={handleFabPress}>
         <View style={styles.fabContainer}>
@@ -273,18 +332,32 @@ const Chats = ({ setUnreadCount }) => {
 };
 
 const styles = StyleSheet.create({
-  blankContainer: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
   container: {
+    backgroundColor: '#F8FAFC',
     flex: 1,
+  },
+  disclaimerEmphasis: {
+    color: colors.teal,
+  },
+  disclaimerIcon: {
+    color: '#565656',
+  },
+  disclaimerText: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: spacing.lg,
+    marginHorizontal: layout.pageInset,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  emptyStateContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
   fab: {
-    bottom: 12,
+    bottom: layout.fabOffset,
     position: 'absolute',
-    right: 12,
+    right: layout.fabOffset,
   },
   fabContainer: {
     alignItems: 'center',
@@ -294,11 +367,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 56,
   },
+  footerContainer: {
+    alignItems: 'center',
+  },
   itemCount: {
     color: colors.teal,
     fontSize: 18,
     fontWeight: '400',
-    left: 100,
+    marginLeft: layout.pageInset,
+  },
+  listCard: {
+    backgroundColor: 'white',
+    borderRadius: layout.cardRadius,
+    flex: 1,
+    overflow: 'hidden',
+  },
+  listContent: {
+    flexGrow: 1,
+    paddingBottom: 88,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -306,20 +392,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  pageContent: {
+    flex: 1,
+    paddingHorizontal: layout.pageInset,
+    paddingTop: 34,
+  },
   selectedContactRow: {
     backgroundColor: colors.grey,
   },
   textContainer: {
+    color: '#565656',
     fontSize: 16,
+    textAlign: 'center',
   },
   trashBin: {
     color: colors.teal,
-    right: 12,
+    paddingRight: layout.pageInset,
   },
 });
-
-Chats.propTypes = {
-  setUnreadCount: PropTypes.func,
-};
 
 export default Chats;

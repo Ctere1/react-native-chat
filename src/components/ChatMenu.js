@@ -1,16 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, Alert, StyleSheet } from 'react-native';
+import { doc, getDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { Text, View, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { Menu, MenuOption, MenuOptions, MenuTrigger } from 'react-native-popup-menu';
 
 import { auth, database } from '../config/firebase';
+import { deleteChatForUser } from '../services/chatService';
 
 const ChatMenu = ({ chatName, chatId }) => {
   const navigation = useNavigation();
-
   const handleDeleteChat = () => {
     Alert.alert(
       'Delete this chat?',
@@ -27,16 +27,11 @@ const ChatMenu = ({ chatName, chatId }) => {
               const chatDoc = await getDoc(chatRef);
               if (!chatDoc.exists()) throw new Error('Chat not found.');
 
-              const users = chatDoc.data().users || [];
-              const updatedUsers = users.map(user =>
-                user.email === userEmail ? { ...user, deletedFromChat: true } : user
-              );
-
-              await setDoc(chatRef, { users: updatedUsers }, { merge: true });
-
-              // If all users marked deleted, remove chat completely
-              const hasAllDeleted = updatedUsers.every(user => user.deletedFromChat);
-              if (hasAllDeleted) await deleteDoc(chatRef);
+               await deleteChatForUser({
+                 chatId,
+                 chatData: chatDoc.data(),
+                 userEmail,
+               });
 
               // Go back after deletion
               navigation.goBack();
@@ -53,8 +48,19 @@ const ChatMenu = ({ chatName, chatId }) => {
 
   return (
     <Menu>
-      <MenuTrigger>
-        <Ionicons name="ellipsis-vertical" size={25} color="#373737" style={styles.menuIcon} />
+      <MenuTrigger
+        customStyles={menuTriggerStyles}
+        testID="chat-menu-trigger"
+      >
+        <View
+          accessible
+          accessibilityHint="Opens chat actions"
+          accessibilityLabel="More chat actions"
+          accessibilityRole="button"
+          style={styles.menuButton}
+        >
+          <Ionicons name="ellipsis-vertical" size={24} color="#373737" style={styles.menuIcon} />
+        </View>
       </MenuTrigger>
       <MenuOptions customStyles={menuOptionsStyles}>
         <MenuOption
@@ -69,15 +75,10 @@ const ChatMenu = ({ chatName, chatId }) => {
           style={styles.optionRow}
         >
           <Ionicons name="trash-outline" size={20} color="#FF3B30" style={styles.optionIcon} />
-          <Text style={[styles.optionText, { color: '#FF3B30' }]}>Delete Chat</Text>
-        </MenuOption>
-
-        <MenuOption
-          onSelect={() => Alert.alert('Feature coming soon')}
-          style={styles.optionRow}
-        >
-          <Ionicons name="volume-mute-outline" size={20} color="#373737" style={styles.optionIcon} />
-          <Text style={styles.optionText}>Mute Chat</Text>
+          <View style={styles.optionTextContainer}>
+            <Text style={[styles.optionText, { color: '#FF3B30' }]}>Delete Chat</Text>
+            <Text style={styles.optionSubtitle}>Remove it from your chat list</Text>
+          </View>
         </MenuOption>
       </MenuOptions>
     </Menu>
@@ -85,9 +86,15 @@ const ChatMenu = ({ chatName, chatId }) => {
 };
 
 const styles = StyleSheet.create({
+  menuButton: {
+    alignItems: 'center',
+    borderRadius: 22,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
   menuIcon: {
-    marginRight: 12,
-    padding: 4,
+    marginRight: 0,
   },
   optionIcon: {
     marginRight: 18,
@@ -102,6 +109,9 @@ const styles = StyleSheet.create({
     color: '#373737',
     fontSize: 16,
     fontWeight: '500',
+  },
+  optionTextContainer: {
+    flex: 1,
   },
 });
 
@@ -119,6 +129,16 @@ const menuOptionsStyles = {
   },
   optionWrapper: {
     backgroundColor: 'transparent',
+  },
+};
+
+const menuTriggerStyles = {
+  TriggerTouchableComponent: TouchableOpacity,
+  triggerTouchable: {
+    accessibilityHint: 'Opens chat actions',
+    accessibilityLabel: 'More chat actions',
+    accessibilityRole: 'button',
+    hitSlop: { bottom: 6, left: 6, right: 6, top: 6 },
   },
 };
 

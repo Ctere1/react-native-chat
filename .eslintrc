@@ -56,6 +56,16 @@
       }
     }
   },
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.js"
+      ],
+      "env": {
+        "jest": true
+      }
+    }
+  ],
   "rules": {
     "no-alert": 0,
     "camelcase": 0,
