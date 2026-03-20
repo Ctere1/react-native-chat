@@ -21,5 +21,5 @@ export const layout = {
   cardRadius: 16,
   fabOffset: spacing.md,
   pageInset: spacing.md,
-  pageTopInset: 0,
+  pageTopInset: 16,
 };

@@ -55,12 +55,12 @@ const Chats = () => {
       return () => subscription.remove();
     }
 
-    return () => {};
+    return () => { };
   }, [selectedItems.length]);
 
   useFocusEffect(
     useCallback(() => {
-      let unsubscribe = () => {};
+      let unsubscribe = () => { };
 
       const subscribeToChats = async () => {
         await backfillCurrentUserChatMetadata(auth?.currentUser?.email);
@@ -107,9 +107,9 @@ const Chats = () => {
             snapshot.docChanges().forEach((change) => {
               const chatData = change.doc.data();
 
-               if (!isChatVisibleForUser(chatData, auth?.currentUser?.email)) {
-                 return;
-               }
+              if (!isChatVisibleForUser(chatData, auth?.currentUser?.email)) {
+                return;
+              }
 
               const unreadCount = getUnreadCountForUser(chatData, auth?.currentUser?.email);
               const previousUnreadCount = previousUnreadCountsRef.current[change.doc.id] ?? 0;
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   pageContent: {
     flex: 1,
     paddingHorizontal: layout.pageInset,
-    paddingTop: 34,
+    paddingTop: layout.pageTopInset,
   },
   selectedContactRow: {
     backgroundColor: colors.grey,
