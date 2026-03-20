@@ -23,18 +23,18 @@
 </div>
 
 <p align="center">
-  <a href="#ℹ️-introduction">Introduction</a> •
+  <a href="#introduction">Introduction</a> •
   <a href="#features">Features</a> •
-  <a href="#🧱architecture">Architecture</a> •
+  <a href="#architecture">Architecture</a> •
   <a href="#installation-guide">Installation Guide</a> •
   <a href="#environment-variables">Environment Variables</a> •
   <a href="#development-scripts">Development Scripts</a> •
-  <a href="#🏗️building-guide">Building Guide</a> •
+  <a href="#building-guide">Building Guide</a> •
   <a href="#testing--quality">Testing & Quality</a> •
   <a href="#screenshots">Screenshots</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a> •
-  <a href="#contributors">Contributors</a> 
+  <a href="#contributors">Contributors</a>
 </p>
 
 ---
@@ -42,10 +42,6 @@
 ## ℹ️ Introduction
 
 **React Native Chat App** is a real-time chat application built using [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/), powered by [Firebase](https://firebase.google.com/) (Web v9) for authentication and real-time messaging.
-
-- For the live demo video see [Demo.mp4](./media/ReactNativeChat-Live-Demo.mp4)     
-
-https://github.com/Ctere1/react-native-chat/assets/62745858/bcde4aa0-d2f2-4d8c-8716-bf274c059d2e
 
 > [!NOTE] 
 > See screenshots below for a preview.
@@ -260,29 +256,29 @@ npx expo-doctor
 ## 🪟 Screenshots
 
 ### **Login & Signup**
-|                  Login                   |                  Signup                  |
-| :--------------------------------------: | :--------------------------------------: |
-| <img src="./media/ss1.jpg"  width="250"> | <img src="./media/ss2.jpg"  width="250"> |
+|                   Login                   |                  Signup                   |
+| :---------------------------------------: | :---------------------------------------: |
+| <img src="./media/ss1.jpeg"  width="250"> | <img src="./media/ss2.jpeg"  width="250"> |
 
 ### **Chats & Users**
-|                  Chats                   |                  Users                   |                Group Chat                |               Delete Chats               |
-| :--------------------------------------: | :--------------------------------------: | :--------------------------------------: | :--------------------------------------: |
-| <img src="./media/ss3.jpg"  width="250"> | <img src="./media/ss4.jpg"  width="250"> | <img src="./media/ss5.jpg"  width="250"> | <img src="./media/ss7.jpg"  width="250"> |
+|                   Chats                   |                   Users                   |                Group Chat                 |               Delete Chats                |
+| :---------------------------------------: | :---------------------------------------: | :---------------------------------------: | :---------------------------------------: |
+| <img src="./media/ss3.jpeg"  width="250"> | <img src="./media/ss4.jpeg"  width="250"> | <img src="./media/ss5.jpeg"  width="250"> | <img src="./media/ss7.jpeg"  width="250"> |
 
 ### **Settings & More**
-|                 Settings                 |                 Profile                  |                   Help                    |                  Account                  |
-| :--------------------------------------: | :--------------------------------------: | :---------------------------------------: | :---------------------------------------: |
-| <img src="./media/ss8.jpg"  width="250"> | <img src="./media/ss9.jpg"  width="250"> | <img src="./media/ss10.jpg"  width="250"> | <img src="./media/ss11.jpg"  width="250"> |
+|                 Settings                  |                  Profile                  |                    Help                    |                  Account                   |
+| :---------------------------------------: | :---------------------------------------: | :----------------------------------------: | :----------------------------------------: |
+| <img src="./media/ss8.jpeg"  width="250"> | <img src="./media/ss9.jpeg"  width="250"> | <img src="./media/ss10.jpeg"  width="250"> | <img src="./media/ss11.jpeg"  width="250"> |
 
 ### **Chat Experience**
-|                Emoji Panel                |               Note to Self                |             Main Chat Screen              |                 Chat Info                 |
-| :---------------------------------------: | :---------------------------------------: | :---------------------------------------: | :---------------------------------------: |
-| <img src="./media/ss12.jpg"  width="250"> | <img src="./media/ss13.jpg"  width="250"> | <img src="./media/ss14.jpg"  width="250"> | <img src="./media/ss15.jpg"  width="250"> |
+|                Emoji Panel                 |                Note to Self                |              Main Chat Screen              |                 Chat Info                  |
+| :----------------------------------------: | :----------------------------------------: | :----------------------------------------: | :----------------------------------------: |
+| <img src="./media/ss12.jpeg"  width="250"> | <img src="./media/ss13.jpeg"  width="250"> | <img src="./media/ss14.jpeg"  width="250"> | <img src="./media/ss15.jpeg"  width="250"> |
 
 ###  **Other**
-|             Message Indicator             |
-| :---------------------------------------: |
-| <img src="./media/ss16.jpg"  width="250"> |
+|             Message Indicator              |
+| :----------------------------------------: |
+| <img src="./media/ss16.jpeg"  width="250"> |
 
 ---
 
