@@ -144,7 +144,11 @@ These values are read from `app.config.js` and exposed under `expo.extra`.
 
 ```bash
 npm start        # Start Expo
-npm run android  # Native Android run
+npm run android  # Native Android dev run (does not create a release APK)
+npm run build:android:local         # Build a local Android release APK
+npm run build:android:local:clean   # Clean and rebuild the local Android release APK
+npm run build:android:eas:preview   # Build an Android APK on EAS using the preview profile
+npm run build:android:eas:production # Build the production Android artifact on EAS
 npm run ios      # Native iOS run
 npm run web      # Expo web
 npm test         # Jest unit/component tests
@@ -162,41 +166,71 @@ npm run format   # Prettier
 - Chat and unread queries are now intentionally sorted client-side so the app does not require a Firestore composite index for `userEmails + lastUpdated` just to run locally.
 - Metro may warn about `just-group-by` / `just-map-values` export resolution through `react-native-emoji-modal`. The currently published package version still emits those warnings, so they are non-blocking upstream dependency warnings rather than app-code errors.
 - If a `SafeAreaView` deprecation warning still appears, it is coming from the `react-native-popup-menu` dependency rather than the app's own screens.
+- For a local Android release APK build, make sure Android NDK `27.1.12297006` is installed. This project's working local release build currently depends on that NDK line together with the repository's Gradle wrapper.
 
 ---
 
 ## 🏗️ Building Guide
 
-To build this application for production (e.g., APK for Android):
+This repository now supports two documented Android release flows:
 
-1. **Set up environment variables:**  
-   Create a `.env` file with your Firebase config. Push it to EAS environment:
+1. a **local release APK build** from the checked-out native Android project
+2. an **EAS Android build** using the profiles in `eas.json`
+
+### Local Android release APK
+
+Use this when you want a release APK directly on your machine.
+
+```bash
+npm run build:android:local
+```
+
+For a full clean rebuild:
+
+```bash
+npm run build:android:local:clean
+```
+
+Notes:
+
+- This is the correct local APK flow. `npm run android` is still a native development run command, not a release build command.
+- The generated APK is written to:
+
+```text
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+- The current working local Android release setup expects:
+  - Android NDK `27.1.12297006`
+  - the repository Gradle wrapper (now aligned to Gradle `8.13`)
+  - New Architecture to remain enabled because the current `react-native-reanimated` setup depends on it
+
+### EAS Android builds
+
+Use this when you want Expo/EAS to produce the Android artifact for you.
+
+1. **Set up environment variables**
+
+   Create a `.env` file with your Firebase config. For EAS builds, make sure the same values are configured in your EAS environment as well.
+
+2. **Build the preview Android APK on EAS**
 
    ```bash
-   eas secret:push --scope project --env-file .env
+   npm run build:android:eas:preview
    ```
 
-2. **Build the APK (Android):**
+   This uses the `preview` profile in `eas.json`, which is configured to produce an Android APK.
+
+3. **Build the production Android artifact on EAS**
 
    ```bash
-   eas build -p android --profile preview
+   npm run build:android:eas:production
    ```
 
-   This will use the preview profile in [eas.json](/eas.json).
+   This uses the `production` profile in `eas.json`.
 
-> [!NOTE]   
-> Environment variables in `.env` are used by Expo CLI locally.  
-> For EAS Build, define variables in your `eas.json` build profile for best results.
-
-> **Local Build:**
->
-> ```bash
-> # For android
-> npm run android
->
-> # For ios
-> npm run ios
-> ```
+> [!NOTE]
+> `.env` values are used by Expo CLI locally, but remote EAS builds should also have the same variables configured in EAS so the bundle step can read the expected Firebase config.
 
 ---
 

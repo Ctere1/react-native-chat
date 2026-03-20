@@ -20,6 +20,10 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
+    "build:android:eas:preview": "eas build -p android --profile preview",
+    "build:android:eas:production": "eas build -p android --profile production",
+    "build:android:local": "node -e \"const { spawnSync } = require('node:child_process'); const isWin = process.platform === 'win32'; const command = isWin ? 'gradlew.bat' : './gradlew'; const result = spawnSync(command, ['assembleRelease'], { cwd: 'android', stdio: 'inherit', shell: isWin }); process.exit(result.status ?? 1);\"",
+    "build:android:local:clean": "node -e \"const { spawnSync } = require('node:child_process'); const isWin = process.platform === 'win32'; const command = isWin ? 'gradlew.bat' : './gradlew'; const result = spawnSync(command, ['clean', 'assembleRelease'], { cwd: 'android', stdio: 'inherit', shell: isWin }); process.exit(result.status ?? 1);\"",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --runInBand",
@@ -46,8 +50,8 @@
     "firebase": "^12.11.0",
     "process": "^0.11.10",
     "prop-types": "^15.8.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-emoji-modal": "^0.2.4",
     "react-native-gesture-handler": "~2.28.0",
@@ -80,7 +84,7 @@
     "globals": "^15.14.0",
     "jest-expo": "~54.0.0",
     "prettier": "^3.8.1",
-    "react-test-renderer": "^19.2.4"
+    "react-test-renderer": "19.1.0"
   },
   "expo": {
     "doctor": {
