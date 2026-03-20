@@ -1,26 +1,30 @@
-<h1 align="center">
-  <br>
-   <img src="https://user-images.githubusercontent.com/62745858/229376399-edede393-f1e7-4e91-8c68-d76510ece76f.png" width="100"><br>
-   React Native Chat App
-   <br>
-   <br>
-   <img src="https://img.shields.io/badge/react_native-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" />
-   <img src="https://img.shields.io/badge/firebase-%23039BE5.svg?style=for-the-badge&logo=firebase" />
-   <img src="https://img.shields.io/badge/expo-1C1E24?style=for-the-badge&logo=expo&logoColor=#D04A37" />
-</h1>
+<div align="center">
+  <img src="./media/react_native_chat_repo.png" alt="React Native Chat App Banner" width="500" />
+</div>
+
+<br />
 
 <div align="center">
-  <a href="https://github.com/Ctere1/react-native-chat/stargazers">
-    <img src="https://img.shields.io/github/stars/Ctere1/react-native-chat?style=social" alt="GitHub Repo stars">
-  </a>
-  <a href="https://github.com/Ctere1/react-native-chat/network/members">
-    <img src="https://img.shields.io/github/forks/Ctere1/react-native-chat?style=social" alt="GitHub forks">
-  </a>
-  <a href="https://github.com/Ctere1/react-native-chat/watchers">
-    <img src="https://img.shields.io/github/watchers/Ctere1/react-native-chat?style=social" alt="GitHub watchers">
-  </a>
-  <br>
+  
+  # 💬 React Native Chat App
+  
+  **A real-time messaging application built with React Native & Firebase**
+  
+  [![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactnative.dev/)
+  [![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=for-the-badge&logo=firebase&logoColor=white)](https://firebase.google.com/)
+  [![Expo](https://img.shields.io/badge/Expo-1C1E24?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
+  
+  <br />
+  
+  [![GitHub stars](https://img.shields.io/github/stars/Ctere1/react-native-chat?style=social&color=yellow)](https://github.com/Ctere1/react-native-chat/stargazers)
+  [![GitHub forks](https://img.shields.io/github/forks/Ctere1/react-native-chat?style=social&color=blue)](https://github.com/Ctere1/react-native-chat/network)
+  [![GitHub watchers](https://img.shields.io/github/watchers/Ctere1/react-native-chat?style=social&color=green)](https://github.com/Ctere1/react-native-chat/watchers)
+  [![License](https://img.shields.io/badge/license-MIT-red?style=social)](LICENSE)
+  
 </div>
+
+---
+
 
 <p align="center">
   <a href="#ℹ️-introduction">Introduction</a> •
