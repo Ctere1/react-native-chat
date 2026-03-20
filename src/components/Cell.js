@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 
+import { spacing } from '../config/constants';
+
 const Cell = ({
   title,
   icon,
@@ -13,8 +15,15 @@ const Cell = ({
   secondIcon,
   subtitle,
   showForwardIcon = true,
+  accessibilityHint,
 }) => (
-  <TouchableOpacity style={[styles.cell, style]} onPress={onPress}>
+  <TouchableOpacity
+    accessibilityHint={accessibilityHint}
+    accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
+    accessibilityRole={onPress ? 'button' : 'text'}
+    style={[styles.cell, style]}
+    onPress={onPress}
+  >
     <View style={[styles.iconContainer, { backgroundColor: tintColor }]}>
       <Ionicons name={icon} size={24} marginStart={4} color={iconColor} />
     </View>
@@ -32,25 +41,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'white',
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+    minHeight: 56,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   iconContainer: {
     alignContent: 'center',
-    borderRadius: 6,
-    height: 32,
+    borderRadius: spacing.xs,
+    height: 30,
     justifyContent: 'center',
-    width: 32,
+    width: 30,
   },
   subtitle: {
     color: '#565656',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: spacing.xxs,
   },
   textsContainer: {
     flex: 1,
-    marginStart: 8,
+    marginStart: spacing.sm,
   },
   title: {
     fontSize: 16,
+    lineHeight: 20,
   },
 });
 
@@ -64,6 +78,7 @@ Cell.propTypes = {
   secondIcon: PropTypes.string,
   subtitle: PropTypes.string,
   showForwardIcon: PropTypes.bool,
+  accessibilityHint: PropTypes.string,
 };
 
 export default Cell;

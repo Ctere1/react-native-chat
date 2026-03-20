@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 
-import { colors } from '../config/constants';
+import { buildInitials } from '../utils/chat';
+import { colors, spacing } from '../config/constants';
 
 const ContactRow = ({
   name,
@@ -16,14 +17,16 @@ const ContactRow = ({
   subtitle2,
   newMessageCount,
 }) => (
-  <TouchableOpacity style={[styles.row, style]} onPress={onPress} onLongPress={onLongPress}>
+  <TouchableOpacity
+    accessibilityHint={newMessageCount > 0 ? `${newMessageCount} unread messages` : undefined}
+    accessibilityLabel={`${name}. ${subtitle}${subtitle2 ? `. ${subtitle2}` : ''}`}
+    accessibilityRole="button"
+    style={[styles.row, style]}
+    onPress={onPress}
+    onLongPress={onLongPress}
+  >
     <View style={styles.avatar}>
-      <Text style={styles.avatarLabel}>
-        {name
-          .trim()
-          .split(' ')
-          .reduce((prev, current) => `${prev}${current[0]}`, '')}
-      </Text>
+      <Text style={styles.avatarLabel}>{buildInitials(name)}</Text>
     </View>
 
     <View style={styles.textsContainer}>
@@ -55,25 +58,26 @@ const styles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
     backgroundColor: colors.primary,
-    borderRadius: 28,
-    height: 56,
+    borderRadius: 26,
+    height: 52,
     justifyContent: 'center',
-    width: 56,
+    width: 52,
   },
   avatarLabel: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 18,
   },
   name: {
     fontSize: 16,
     fontWeight: '600',
+    lineHeight: 20,
   },
   newMessageBadge: {
     alignItems: 'center',
     backgroundColor: colors.teal,
     borderRadius: 12,
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: spacing.xxs,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
@@ -98,29 +102,33 @@ const styles = StyleSheet.create({
   rightContainer: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    marginLeft: spacing.sm,
+    minWidth: 52,
   },
   row: {
     alignItems: 'center',
     borderBottomWidth: 0.5,
     borderColor: '#e0e0e0',
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    minHeight: 68,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   subtitle: {
     color: '#565656',
     fontSize: 14,
-    marginTop: 4,
+    lineHeight: 18,
+    marginTop: spacing.xxs,
     maxWidth: 200,
   },
   subtitle2: {
     color: '#8e8e8e',
     fontSize: 12,
-    marginBottom: 4,
+    marginBottom: spacing.xxs,
   },
   textsContainer: {
     flex: 1,
-    marginStart: 16,
+    marginStart: spacing.sm,
   },
 });
 

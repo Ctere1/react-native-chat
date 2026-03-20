@@ -3,12 +3,14 @@ import uuid from 'react-native-uuid';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import EmojiModal from 'react-native-emoji-modal';
-import React, { useState, useEffect, useCallback } from 'react';
-import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { Send, Bubble, GiftedChat, InputToolbar } from 'react-native-gifted-chat';
 import { ref, getStorage, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import {
   View,
+  Text,
+  Alert,
+  AppState,
   Keyboard,
   StyleSheet,
   BackHandler,
@@ -16,8 +18,26 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
+import { auth } from '../config/firebase';
 import { colors } from '../config/constants';
-import { auth, database } from '../config/firebase';
+import MessageVideo from '../components/MessageVideo';
+import {
+  mergeMessages,
+  MESSAGE_STATUS,
+  normalizeMessage,
+} from '../utils/chat';
+import {
+  markChatAsRead,
+  getChatMetadata,
+  sendChatMessage,
+  ensureChatSchema,
+  loadPendingMessages,
+  flushPendingMessages,
+  removePendingMessage,
+  upsertPendingMessage,
+  subscribeToChatMessages,
+  clearDeliveredPendingMessages,
+} from '../services/chatMessageService';
 
 const RenderLoadingUpload = () => (
   <View style={styles.loadingContainerUpload}>
@@ -42,7 +62,13 @@ const RenderBubble = (props) => (
 );
 
 const RenderAttach = (props) => (
-  <TouchableOpacity {...props} style={styles.addImageIcon}>
+  <TouchableOpacity
+    {...props}
+    accessibilityHint="Attach a photo or video"
+    accessibilityLabel="Attach media"
+    accessibilityRole="button"
+    style={styles.addImageIcon}
+  >
     <View>
       <Ionicons name="attach-outline" size={32} color={colors.teal} />
     </View>
@@ -63,7 +89,12 @@ const RenderInputToolbar = (props, handleEmojiPanel) => (
       renderActions={() => RenderActions(handleEmojiPanel)}
       containerStyle={styles.inputToolbar}
     />
-    <Send {...props}>
+    <Send
+      {...props}
+      accessibilityHint="Sends the current message"
+      accessibilityLabel="Send message"
+      accessibilityRole="button"
+    >
       <View style={styles.sendIconContainer}>
         <Ionicons name="send" size={24} color={colors.teal} />
       </View>
@@ -72,33 +103,197 @@ const RenderInputToolbar = (props, handleEmojiPanel) => (
 );
 
 const RenderActions = (handleEmojiPanel) => (
-  <TouchableOpacity style={styles.emojiIcon} onPress={handleEmojiPanel}>
+  <TouchableOpacity
+    accessibilityHint="Open emoji picker"
+    accessibilityLabel="Open emojis"
+    accessibilityRole="button"
+    style={styles.emojiIcon}
+    onPress={handleEmojiPanel}
+  >
     <View>
       <Ionicons name="happy-outline" size={32} color={colors.teal} />
     </View>
   </TouchableOpacity>
 );
 
+const buildOutgoingMessage = (message = {}) =>
+  normalizeMessage({
+    ...message,
+    _id: message._id ?? String(uuid.v4()),
+    createdAt: message.createdAt ?? new Date(),
+    status: message.status ?? MESSAGE_STATUS.SENDING,
+    user: {
+      _id: auth?.currentUser?.email,
+      name: auth?.currentUser?.displayName,
+      avatar: 'https://i.pravatar.cc/300',
+      ...message.user,
+    },
+  });
+
 function Chat({ route }) {
-  const [messages, setMessages] = useState([]);
+  const [serverMessages, setServerMessages] = useState([]);
+  const [pendingMessages, setPendingMessages] = useState([]);
   const [modal, setModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const lastReadMessageIdRef = useRef(null);
+
+  const displayedMessages = useMemo(
+    () => mergeMessages(serverMessages, pendingMessages),
+    [pendingMessages, serverMessages]
+  );
+  const failedMessagesCount = pendingMessages.filter(
+    (message) => message.status === MESSAGE_STATUS.FAILED
+  ).length;
+  const sendingMessagesCount = pendingMessages.filter(
+    (message) => message.status === MESSAGE_STATUS.SENDING
+  ).length;
+
+  const syncPendingMessages = useCallback(async () => {
+    const storedPendingMessages = await loadPendingMessages(route.params.id);
+    setPendingMessages(storedPendingMessages);
+  }, [route.params.id]);
+
+  const markLatestMessageAsRead = useCallback(
+    async (messages) => {
+      const latestMessage = messages[0];
+
+      if (
+        !latestMessage?._id ||
+        latestMessage.user?._id === auth?.currentUser?.email ||
+        lastReadMessageIdRef.current === latestMessage._id
+      ) {
+        return;
+      }
+
+      lastReadMessageIdRef.current = latestMessage._id;
+      await markChatAsRead({
+        chatId: route.params.id,
+        userEmail: auth?.currentUser?.email,
+      });
+    },
+    [route.params.id]
+  );
+
+  const sendMessage = useCallback(
+    async (message, { showFailureAlert = true } = {}) => {
+      const optimisticMessage = buildOutgoingMessage(message);
+
+      setPendingMessages((previousMessages) =>
+        mergeMessages([], [
+          optimisticMessage,
+          ...previousMessages.filter((previousMessage) => previousMessage._id !== optimisticMessage._id),
+        ])
+      );
+      await upsertPendingMessage(route.params.id, optimisticMessage);
+
+      try {
+        await sendChatMessage({
+          chatId: route.params.id,
+          message: optimisticMessage,
+        });
+        await removePendingMessage(route.params.id, optimisticMessage._id);
+
+        setPendingMessages((previousMessages) =>
+          previousMessages.map((previousMessage) =>
+            previousMessage._id === optimisticMessage._id
+              ? { ...previousMessage, status: MESSAGE_STATUS.SENT }
+              : previousMessage
+          )
+        );
+      } catch (error) {
+        const failedMessage = {
+          ...optimisticMessage,
+          errorMessage: error.message,
+          status: MESSAGE_STATUS.FAILED,
+        };
+
+        setPendingMessages((previousMessages) =>
+          previousMessages.map((previousMessage) =>
+            previousMessage._id === optimisticMessage._id ? failedMessage : previousMessage
+          )
+        );
+        await upsertPendingMessage(route.params.id, failedMessage);
+
+        if (showFailureAlert) {
+          Alert.alert('Message not sent', 'The message is still in the chat. Retry it when you are back online.');
+        }
+      }
+    },
+    [route.params.id]
+  );
+
+  const retryMessage = useCallback(
+    async (message) => {
+      const sendingMessage = {
+        ...message,
+        status: MESSAGE_STATUS.SENDING,
+      };
+
+      setPendingMessages((previousMessages) =>
+        previousMessages.map((previousMessage) =>
+          previousMessage._id === sendingMessage._id ? sendingMessage : previousMessage
+        )
+      );
+      await upsertPendingMessage(route.params.id, sendingMessage);
+      await sendMessage(sendingMessage, { showFailureAlert: true });
+    },
+    [route.params.id, sendMessage]
+  );
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(doc(database, 'chats', route.params.id), (document) => {
-      setMessages(
-        document.data().messages.map((message) => ({
-          ...message,
-          createdAt: message.createdAt.toDate(),
-          image: message.image ?? '',
-        }))
-      );
-    });
+    let unsubscribe = () => {};
 
+    const initializeChat = async () => {
+      try {
+        const chatData = await getChatMetadata(route.params.id);
+
+        if (chatData) {
+          await ensureChatSchema({ chatId: route.params.id, chatData });
+        }
+
+        await syncPendingMessages();
+
+        unsubscribe = subscribeToChatMessages(
+          route.params.id,
+          async (messages) => {
+            setServerMessages(messages);
+            setLoading(false);
+            await markLatestMessageAsRead(messages);
+          },
+          (error) => {
+            setLoading(false);
+            Alert.alert('Unable to load messages', error.message);
+          }
+        );
+
+        await flushPendingMessages({ chatId: route.params.id });
+      } catch (error) {
+        setLoading(false);
+        Alert.alert('Unable to open chat', error.message);
+      }
+    };
+
+    initializeChat();
+
+    return () => unsubscribe();
+  }, [markLatestMessageAsRead, route.params.id, syncPendingMessages]);
+
+  useEffect(() => {
+    const deliveredMessageIds = serverMessages.map((message) => message._id);
+
+    clearDeliveredPendingMessages(route.params.id, deliveredMessageIds)
+      .then((nextPendingMessages) => {
+        setPendingMessages(nextPendingMessages);
+      })
+      .catch((error) => {
+        console.log('Unable to reconcile pending messages', error);
+      });
+  }, [route.params.id, serverMessages]);
+
+  useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      //  Dismiss the keyboard
       Keyboard.dismiss();
-      //  If the emoji panel is open, close it
       if (modal) {
         setModal(false);
         return true;
@@ -106,126 +301,182 @@ function Chat({ route }) {
       return false;
     });
 
-    //  Dismiss the emoji panel when the keyboard is shown
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-      if (modal) setModal(false);
+      if (modal) {
+        setModal(false);
+      }
     });
 
-    // Cleanup
+    const appStateListener = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        flushPendingMessages({ chatId: route.params.id })
+          .then(syncPendingMessages)
+          .catch((error) => {
+            console.log('Unable to flush pending messages', error);
+          });
+      }
+    });
+
     return () => {
-      unsubscribe();
       backHandler.remove();
       keyboardDidShowListener.remove();
+      appStateListener.remove();
     };
-  }, [route.params.id, modal]);
+  }, [modal, route.params.id, syncPendingMessages]);
 
-  const onSend = useCallback(
-    async (m = []) => {
-      // Get messages
-      const chatDocRef = doc(database, 'chats', route.params.id);
-      const chatDocSnap = await getDoc(chatDocRef);
+  const uploadMediaAsync = useCallback(
+    async (asset) => {
+      setUploading(true);
 
-      const chatData = chatDocSnap.data();
-      const data = chatData.messages.map((message) => ({
-        ...message,
-        createdAt: message.createdAt.toDate(),
-        image: message.image ?? '',
-      }));
+      try {
+        const blob = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = () => resolve(xhr.response);
+          xhr.onerror = () => reject(new TypeError('Network request failed'));
+          xhr.responseType = 'blob';
+          xhr.open('GET', asset.uri, true);
+          xhr.send(null);
+        });
 
-      // Attach new message
-      const messagesWillSend = [{ ...m[0], sent: true, received: false }];
-      const chatMessages = GiftedChat.append(data, messagesWillSend);
+        const messageId = String(uuid.v4());
+        const fileExtension = asset.uri.split('.').pop()?.split('?')[0] || 'bin';
+        const fileRef = ref(getStorage(), `${messageId}.${fileExtension}`);
+        const uploadTask = uploadBytesResumable(fileRef, blob);
 
-      setDoc(
-        doc(database, 'chats', route.params.id),
-        {
-          messages: chatMessages,
-          lastUpdated: Date.now(),
-        },
-        { merge: true }
-      );
+        uploadTask.on(
+          'state_changed',
+          undefined,
+          (error) => {
+            setUploading(false);
+            Alert.alert('Upload failed', error.message);
+          },
+          async () => {
+            const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            setUploading(false);
+            await sendMessage({
+              _id: messageId,
+              createdAt: new Date(),
+              text: '',
+              image: asset.type === 'image' ? downloadUrl : undefined,
+              video: asset.type === 'video' ? downloadUrl : undefined,
+            });
+          }
+        );
+      } catch (error) {
+        setUploading(false);
+        Alert.alert('Upload failed', error.message);
+      }
     },
-    [route.params.id]
+    [sendMessage]
   );
 
-  const pickImage = async () => {
+  const pickMedia = useCallback(async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('Permission required', 'Allow photo library access to attach media.');
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       quality: 1,
     });
 
     if (!result.canceled) {
-      await uploadImageAsync(result.assets[0].uri);
+      await uploadMediaAsync(result.assets[0]);
     }
-  };
+  }, [uploadMediaAsync]);
 
-  const uploadImageAsync = async (uri) => {
-    setUploading(true);
-    const blob = await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = () => resolve(xhr.response);
-      xhr.onerror = () => reject(new TypeError('Network request failed'));
-      xhr.responseType = 'blob';
-      xhr.open('GET', uri, true);
-      xhr.send(null);
+  const captureMedia = useCallback(async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('Permission required', 'Allow camera access to capture media.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      quality: 1,
     });
 
-    const randomString = uuid.v4();
-    const fileRef = ref(getStorage(), randomString);
-    const uploadTask = uploadBytesResumable(fileRef, blob);
+    if (!result.canceled) {
+      await uploadMediaAsync(result.assets[0]);
+    }
+  }, [uploadMediaAsync]);
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        console.log(`Upload is ${progress}% done`);
-      },
-      (error) => {
-        // Handle unsuccessful uploads
-        console.log(error);
-      },
-      async () => {
-        const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-        setUploading(false);
-        onSend([
-          {
-            _id: randomString,
-            createdAt: new Date(),
-            text: '',
-            image: downloadUrl,
-            user: {
-              _id: auth?.currentUser?.email,
-              name: auth?.currentUser?.displayName,
-              avatar: 'https://i.pravatar.cc/300',
-            },
-          },
-        ]);
-      }
-    );
-  };
+  const handleAttachmentPress = useCallback(() => {
+    Alert.alert('Share media', 'Choose how to attach media to this chat.', [
+      { text: 'Take photo or video', onPress: captureMedia },
+      { text: 'Choose from library', onPress: pickMedia },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }, [captureMedia, pickMedia]);
 
   const handleEmojiPanel = useCallback(() => {
     setModal((prevModal) => {
-      if (prevModal) {
-        // If the modal is already open, close it
-        Keyboard.dismiss();
-        return false;
-      }
-      // If the modal is closed, open it
       Keyboard.dismiss();
-      return true;
+      return !prevModal;
     });
   }, []);
+
+  const renderTicks = useCallback((currentMessage) => {
+    if (!currentMessage || currentMessage.user?._id !== auth?.currentUser?.email) {
+      return null;
+    }
+
+    switch (currentMessage.status) {
+      case MESSAGE_STATUS.SENDING:
+        return <Ionicons name="time-outline" size={14} color="white" />;
+      case MESSAGE_STATUS.FAILED:
+        return <Ionicons name="alert-circle-outline" size={14} color="#ffd0d0" />;
+      case MESSAGE_STATUS.READ:
+        return <Ionicons name="checkmark-done" size={14} color="#d5f6ff" />;
+      default:
+        return <Ionicons name="checkmark" size={14} color="white" />;
+    }
+  }, []);
+
+  const handleMessageLongPress = useCallback(
+    (_context, message) => {
+      if (message.status !== MESSAGE_STATUS.FAILED) {
+        return;
+      }
+
+      Alert.alert('Failed message', 'Retry sending this message?', [
+        {
+          text: 'Retry',
+          onPress: () => retryMessage(message),
+        },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const nextPendingMessages = pendingMessages.filter(
+              (pendingMessage) => pendingMessage._id !== message._id
+            );
+
+            setPendingMessages(nextPendingMessages);
+            await removePendingMessage(route.params.id, message._id);
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    },
+    [pendingMessages, retryMessage, route.params.id]
+  );
 
   return (
     <>
       {uploading && RenderLoadingUpload()}
       <GiftedChat
-        messages={messages}
+        messages={displayedMessages}
         showAvatarForEveryMessage={false}
         showUserAvatar={false}
-        onSend={(messagesArr) => onSend(messagesArr)}
+        onSend={(messagesToSend) => sendMessage(messagesToSend[0])}
         imageStyle={{ height: 212, width: 212 }}
         messagesContainerStyle={{ backgroundColor: '#fff' }}
         textInputStyle={{ backgroundColor: '#fff', borderRadius: 20 }}
@@ -234,8 +485,9 @@ function Chat({ route }) {
           name: auth?.currentUser?.displayName,
           avatar: 'https://i.pravatar.cc/300',
         }}
-        renderBubble={(props) => RenderBubble(props)}
-        renderSend={(props) => RenderAttach({ ...props, onPress: pickImage })}
+        renderBubble={RenderBubble}
+        renderMessageVideo={MessageVideo}
+        renderSend={(props) => RenderAttach({ ...props, onPress: handleAttachmentPress })}
         renderUsernameOnMessage
         renderAvatarOnTop
         renderInputToolbar={(props) => RenderInputToolbar(props, handleEmojiPanel)}
@@ -243,7 +495,32 @@ function Chat({ route }) {
         scrollToBottom
         onPressActionButton={handleEmojiPanel}
         scrollToBottomStyle={styles.scrollToBottomStyle}
-        renderLoading={RenderLoading}
+        renderLoading={loading ? RenderLoading : undefined}
+        renderTicks={renderTicks}
+        renderChatFooter={() => {
+          if (uploading) {
+            return <Text style={styles.statusBanner}>Uploading media...</Text>;
+          }
+
+          if (failedMessagesCount > 0) {
+            return (
+              <Text style={styles.statusBanner}>
+                {failedMessagesCount} message{failedMessagesCount > 1 ? 's' : ''} failed. Long-press to retry or remove.
+              </Text>
+            );
+          }
+
+          if (sendingMessagesCount > 0) {
+            return (
+              <Text style={styles.statusBanner}>
+                Sending {sendingMessagesCount} message{sendingMessagesCount > 1 ? 's' : ''}...
+              </Text>
+            );
+          }
+
+          return null;
+        }}
+        onLongPress={handleMessageLongPress}
       />
 
       {modal && (
@@ -256,18 +533,11 @@ function Chat({ route }) {
           emojiSize={66}
           activeShortcutColor={colors.primary}
           onEmojiSelected={(emoji) => {
-            onSend([
-              {
-                _id: uuid.v4(),
-                createdAt: new Date(),
-                text: emoji,
-                user: {
-                  _id: auth?.currentUser?.email,
-                  name: auth?.currentUser?.displayName,
-                  avatar: 'https://i.pravatar.cc/300',
-                },
-              },
-            ]);
+            sendMessage({
+              _id: String(uuid.v4()),
+              createdAt: new Date(),
+              text: emoji,
+            });
           }}
         />
       )}
@@ -277,10 +547,12 @@ function Chat({ route }) {
 
 const styles = StyleSheet.create({
   addImageIcon: {
-    borderRadius: 16,
-    bottom: 8,
-    height: 32,
-    width: 32,
+    alignItems: 'center',
+    borderRadius: 22,
+    bottom: 2,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
   },
   emojiBackgroundModal: {},
   emojiContainerModal: {
@@ -288,11 +560,13 @@ const styles = StyleSheet.create({
     width: 396,
   },
   emojiIcon: {
-    borderRadius: 16,
-    bottom: 8,
-    height: 32,
+    alignItems: 'center',
+    borderRadius: 22,
+    bottom: 2,
+    height: 44,
+    justifyContent: 'center',
     marginLeft: 4,
-    width: 32,
+    width: 44,
   },
   emojiModal: {},
   inputToolbar: {
@@ -324,30 +598,29 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   scrollToBottomStyle: {
-    borderColor: colors.grey,
-    borderRadius: 28,
-    borderWidth: 1,
-    bottom: 12,
-    height: 56,
-    position: 'absolute',
-    right: 12,
-    width: 56,
+    backgroundColor: colors.primary,
   },
   sendIconContainer: {
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderColor: colors.grey,
-    borderRadius: 22,
-    borderWidth: 0.5,
     height: 44,
     justifyContent: 'center',
-    marginRight: 8,
+    marginHorizontal: 8,
     width: 44,
+  },
+  statusBanner: {
+    color: '#475569',
+    fontSize: 13,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
 });
 
 Chat.propTypes = {
-  route: PropTypes.object.isRequired,
+  route: PropTypes.shape({
+    params: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+    }).isRequired,
+  }).isRequired,
 };
 
 export default Chat;

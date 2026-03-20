@@ -1,21 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { doc, query, setDoc, orderBy, collection, onSnapshot } from 'firebase/firestore';
+import React, { useMemo, useState, useEffect } from 'react';
+import { query, orderBy, collection, onSnapshot } from 'firebase/firestore';
 import {
   Text,
   View,
+  Alert,
   Modal,
+  FlatList,
   Pressable,
   TextInput,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 
-import { colors } from '../config/constants';
 import ContactRow from '../components/ContactRow';
 import { auth, database } from '../config/firebase';
+import { createGroupChat } from '../services/chatService';
+import { colors, layout, spacing } from '../config/constants';
+import { getDisplayName, getUserStatusText } from '../utils/chat';
 
 const Group = () => {
   const navigation = useNavigation();
@@ -23,6 +27,7 @@ const Group = () => {
   const [users, setUsers] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [groupName, setGroupName] = useState('');
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
   useEffect(() => {
     const collectionUserRef = collection(database, 'users');
@@ -41,17 +46,9 @@ const Group = () => {
     });
   }, [navigation, selectedItems]);
 
-  const handleName = (user) => {
-    if (user.data().name) {
-      return user.data().email === auth?.currentUser?.email
-        ? `${user.data().name}*(You)`
-        : user.data().name;
-    }
-    return user.data().email ? user.data().email : '~ No Name or Email ~';
-  };
+  const handleName = (user) => getDisplayName(user.data(), auth?.currentUser?.email);
 
-  const handleSubtitle = (user) =>
-    user.data().email === auth?.currentUser?.email ? 'Message yourself' : 'User status';
+  const handleSubtitle = (user) => getUserStatusText(user.data().email, auth?.currentUser?.email);
 
   const handleOnPress = (user) => {
     selectItems(user);
@@ -76,68 +73,76 @@ const Group = () => {
     setModalVisible(true);
   };
 
-  const handleCreateGroup = () => {
+  const selectableUsers = useMemo(
+    () => users.filter((user) => user.data().email !== auth?.currentUser?.email),
+    [users]
+  );
+
+  const handleCreateGroup = async () => {
     if (!groupName.trim()) {
-      alert('Group name cannot be empty');
+      Alert.alert('Missing group name', 'Group name cannot be empty.');
       return;
     }
 
     const usersToAdd = users
       .filter((user) => selectedItems.includes(user.id))
-      .map((user) => ({
-        email: user.data().email,
-        name: user.data().name,
-        deletedFromChat: false,
-      }));
+      .map((user) => user.data());
 
-    usersToAdd.unshift({
-      email: auth?.currentUser?.email,
-      name: auth?.currentUser?.displayName,
-      deletedFromChat: false,
-    });
+    try {
+      setIsCreatingGroup(true);
+      const chatId = await createGroupChat({
+        currentUser: auth?.currentUser,
+        groupName,
+        selectedUsers: usersToAdd,
+      });
 
-    const newRef = doc(collection(database, 'chats'));
-    setDoc(newRef, {
-      lastUpdated: Date.now(),
-      users: usersToAdd,
-      messages: [],
-      groupName,
-      groupAdmins: [auth?.currentUser?.email],
-    }).then(() => {
-      navigation.navigate('Chat', { id: newRef.id, chatName: groupName });
+      navigation.navigate('Chat', { id: chatId, chatName: groupName.trim() });
       deSelectItems();
       setModalVisible(false);
       setGroupName('');
-    });
+    } catch (error) {
+      Alert.alert('Unable to create group', error.message);
+    } finally {
+      setIsCreatingGroup(false);
+    }
   };
+
+  const renderUser = ({ item }) => (
+    <ContactRow
+      style={getSelected(item) ? styles.selectedContactRow : undefined}
+      name={handleName(item)}
+      subtitle={handleSubtitle(item)}
+      onPress={() => handleOnPress(item)}
+      selected={getSelected(item)}
+      showForwardIcon={false}
+    />
+  );
 
   return (
     <Pressable style={styles.container} onPress={deSelectItems}>
-      {users.length === 0 ? (
-        <View style={styles.blankContainer}>
-          <Text style={styles.textContainer}>No registered users yet</Text>
+      {selectableUsers.length === 0 ? (
+        <View style={styles.pageContent}>
+          <View style={styles.listCard}>
+            <View style={styles.blankContainer}>
+              <Text style={styles.textContainer}>No registered users yet</Text>
+            </View>
+          </View>
         </View>
       ) : (
-        <ScrollView>
-          {users.map(
-            (user) =>
-              user.data().email !== auth?.currentUser?.email && (
-                <React.Fragment key={user.id}>
-                  <ContactRow
-                    style={getSelected(user) ? styles.selectedContactRow : {}}
-                    name={handleName(user)}
-                    subtitle={handleSubtitle(user)}
-                    onPress={() => handleOnPress(user)}
-                    selected={getSelected(user)}
-                    showForwardIcon={false}
-                  />
-                </React.Fragment>
-              )
-          )}
-        </ScrollView>
+        <View style={styles.pageContent}>
+          <View style={styles.listCard}>
+            <FlatList
+              data={selectableUsers}
+              renderItem={renderUser}
+              keyExtractor={(item) => item.id}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.listContent}
+            />
+          </View>
+        </View>
       )}
       {selectedItems.length > 0 && (
-        <TouchableOpacity style={styles.fab} onPress={handleFabPress}>
+        <TouchableOpacity style={styles.fab} onPress={handleFabPress} disabled={isCreatingGroup}>
           <View style={styles.fabContainer}>
             <Ionicons name="arrow-forward-outline" size={24} color="white" />
           </View>
@@ -151,15 +156,29 @@ const Group = () => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={styles.modalView}>
-          <Text style={styles.modalText}>Enter Group Name</Text>
-          <TextInput
-            style={styles.input}
-            onChangeText={setGroupName}
-            value={groupName}
-            placeholder="Group Name"
-            onSubmitEditing={handleCreateGroup} // Create group on submit
-          />
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>Enter Group Name</Text>
+            <TextInput
+              style={styles.input}
+              onChangeText={setGroupName}
+              value={groupName}
+              placeholder="Group Name"
+              editable={!isCreatingGroup}
+              onSubmitEditing={handleCreateGroup} // Create group on submit
+            />
+            <TouchableOpacity
+              style={[styles.createButton, isCreatingGroup ? styles.createButtonDisabled : undefined]}
+              onPress={handleCreateGroup}
+              disabled={isCreatingGroup}
+            >
+              {isCreatingGroup ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.createButtonLabel}>Create group</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </Pressable>
@@ -171,14 +190,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
   },
   container: {
+    backgroundColor: '#F8FAFC',
     flex: 1,
   },
+  createButton: {
+    alignItems: 'center',
+    backgroundColor: colors.teal,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    width: '100%',
+  },
+  createButtonDisabled: {
+    opacity: 0.7,
+  },
+  createButtonLabel: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   fab: {
-    bottom: 12,
+    bottom: layout.fabOffset,
     position: 'absolute',
-    right: 12,
+    right: layout.fabOffset,
   },
   fabContainer: {
     alignItems: 'center',
@@ -189,32 +226,53 @@ const styles = StyleSheet.create({
     width: 56,
   },
   input: {
-    borderColor: 'gray',
+    borderColor: '#cfcfcf',
+    borderRadius: 12,
     borderWidth: 1,
-    height: 40,
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    height: 48,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
     width: '100%',
   },
   itemCount: {
     color: colors.teal,
     fontSize: 18,
     fontWeight: '400',
-    right: 10,
+    marginRight: spacing.sm,
+  },
+  listCard: {
+    backgroundColor: 'white',
+    borderRadius: layout.cardRadius,
+    flex: 1,
+    overflow: 'hidden',
+  },
+  listContent: {
+    paddingBottom: 88,
+    paddingTop: spacing.xs,
+  },
+  modalBackdrop: {
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.lg,
   },
   modalText: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: spacing.md,
     textAlign: 'center',
   },
   modalView: {
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 20,
+    borderRadius: layout.cardRadius + spacing.xxs,
     elevation: 5,
-    margin: 20,
-    padding: 35,
+    padding: spacing.xl,
+  },
+  pageContent: {
+    flex: 1,
+    paddingHorizontal: layout.pageInset,
+    paddingTop: layout.pageTopInset,
   },
   selectedContactRow: {
     backgroundColor: '#E0E0E0',
