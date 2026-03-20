@@ -1,12 +1,6 @@
 <div align="center">
-  <img src="./media/react_native_chat_repo.png" alt="React Native Chat App Banner" width="500" />
-</div>
-
-<br />
-
-<div align="center">
   
-  # 💬 React Native Chat App
+  # React Native Chat App
   
   **A real-time messaging application built with React Native & Firebase**
   
@@ -44,6 +38,8 @@
 ---
 
 ## ℹ️ Introduction
+
+<img src="./media/react_native_chat_repo.png" alt="React Native Chat App Banner" width="500" />
 
 **React Native Chat App** is a real-time chat application built using [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/), powered by [Firebase](https://firebase.google.com/) (Web v9) for authentication and real-time messaging.
 
