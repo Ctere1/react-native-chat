@@ -1,47 +1,44 @@
-<div align="center">
-  
-  # React Native Chat App
-  
-  **A real-time messaging application built with React Native & Firebase**
-  
+<h1 align="center">
+  React Native Chat App
+   
   [![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactnative.dev/)
   [![Firebase](https://img.shields.io/badge/Firebase-039BE5?style=for-the-badge&logo=firebase&logoColor=white)](https://firebase.google.com/)
   [![Expo](https://img.shields.io/badge/Expo-1C1E24?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
-  
-  <br />
   
   [![GitHub stars](https://img.shields.io/github/stars/Ctere1/react-native-chat?style=social&color=yellow)](https://github.com/Ctere1/react-native-chat/stargazers)
   [![GitHub forks](https://img.shields.io/github/forks/Ctere1/react-native-chat?style=social&color=blue)](https://github.com/Ctere1/react-native-chat/network)
   [![GitHub watchers](https://img.shields.io/github/watchers/Ctere1/react-native-chat?style=social&color=green)](https://github.com/Ctere1/react-native-chat/watchers)
   [![License](https://img.shields.io/badge/license-MIT-red?style=social)](LICENSE)
-  
-</div>
-
----
+</h1>
 
 
-<p align="center">
-  <a href="#ℹ️-introduction">Introduction</a> •
-  <a href="#-features">Features</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-installation-guide">Installation Guide</a> •
-  <a href="#-environment-variables">Environment Variables</a> •
-  <a href="#-development-scripts">Development Scripts</a> •
-  <a href="#-building-guide">Building Guide</a> •
-  <a href="#-testing--quality">Testing & Quality</a> •
-  <a href="#-screenshots">Screenshots</a> •
-  <a href="#-credits">Credits</a> •
-  <a href="#-license">License</a> •
-  <a href="#-contributors">Contributors</a>
-</p>
+### **🏷️Table of Contents**
+- [ℹ️ Introduction](#ℹ️-introduction)
+- [⚡ Features](#-features)
+- [🧱 Architecture](#-architecture)
+  - [Architecture decisions](#architecture-decisions)
+- [💾 Installation Guide](#-installation-guide)
+- [🔐 Environment Variables](#-environment-variables)
+- [🧰 Development Scripts](#-development-scripts)
+- [🩺 Troubleshooting](#-troubleshooting)
+- [🏗️ Building Guide](#️-building-guide)
+  - [Local Android release APK](#local-android-release-apk)
+  - [EAS Android builds](#eas-android-builds)
+- [✅ Testing \& Quality](#-testing--quality)
+- [🪟 Screenshots](#-screenshots)
+  - [**Login \& Signup**](#login--signup)
+  - [**Chats \& Users**](#chats--users)
+  - [**Settings \& More**](#settings--more)
+  - [**Chat Experience**](#chat-experience)
+  - [**Other**](#other)
+- [📝 Credits](#-credits)
+- [© License](#-license)
+- [📈 Star History](#-star-history)
+- [📌 Contributors](#-contributors)
 
 ---
 
 ## ℹ️ Introduction
-
-<div align="center">
-  <img src="./media/react_native_chat_repo.png" alt="React Native Chat App Banner" width="500" />
-</div>
 
 **React Native Chat App** is a real-time chat application built using [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/), powered by [Firebase](https://firebase.google.com/) (Web v9) for authentication and real-time messaging.
 
