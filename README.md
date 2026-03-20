@@ -23,18 +23,18 @@
 </div>
 
 <p align="center">
-  <a href="#introduction">Introduction</a> •
-  <a href="#features">Features</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#installation-guide">Installation Guide</a> •
-  <a href="#environment-variables">Environment Variables</a> •
-  <a href="#development-scripts">Development Scripts</a> •
-  <a href="#building-guide">Building Guide</a> •
-  <a href="#testing--quality">Testing & Quality</a> •
-  <a href="#screenshots">Screenshots</a> •
-  <a href="#credits">Credits</a> •
-  <a href="#license">License</a> •
-  <a href="#contributors">Contributors</a>
+  <a href="#ℹ️-introduction">Introduction</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-installation-guide">Installation Guide</a> •
+  <a href="#-environment-variables">Environment Variables</a> •
+  <a href="#-development-scripts">Development Scripts</a> •
+  <a href="#-building-guide">Building Guide</a> •
+  <a href="#-testing--quality">Testing & Quality</a> •
+  <a href="#-screenshots">Screenshots</a> •
+  <a href="#-credits">Credits</a> •
+  <a href="#-license">License</a> •
+  <a href="#-contributors">Contributors</a>
 </p>
 
 ---
